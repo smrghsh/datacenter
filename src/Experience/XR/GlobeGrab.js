@@ -77,8 +77,14 @@ export default class GlobeGrab {
 
     if (!sample || sample.point === null) {
       if (this.grabbing) {
-        this._lostFor += dt;
-        if (this._lostFor > LOST_TIMEOUT) this._release(globe);
+        // A vanished transient-pointer IS the release gesture — throw now.
+        // Lost hand joints get a grace period: visionOS drops them transiently.
+        if (this.source === "pointer") {
+          this._release(globe);
+        } else {
+          this._lostFor += dt;
+          if (this._lostFor > LOST_TIMEOUT) this._release(globe);
+        }
       }
       return;
     }
