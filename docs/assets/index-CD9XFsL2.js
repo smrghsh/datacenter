@@ -30894,4 +30894,4 @@ soundBtn.addEventListener("click", () => setSound(!soundOn));
 experience.on("xrSessionStarted", () => {
   if (!soundOn) setSound(true);
 });
-//# sourceMappingURL=index-D-oazoLu.js.map
+//# sourceMappingURL=index-CD9XFsL2.js.map

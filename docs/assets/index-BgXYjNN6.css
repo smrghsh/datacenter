@@ -58,6 +58,18 @@ body {
   line-height: 1.5;
 }
 
+#hud .credit a {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(230, 235, 242, 0.4);
+}
+
+#hud .credit a:hover {
+  text-decoration-color: currentColor;
+}
+
 #controls {
   position: fixed;
   right: 24px;
