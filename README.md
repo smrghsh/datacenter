@@ -16,9 +16,9 @@ npm run dev          # https://<your-mac>:5173  (self-signed; accept on device)
 NO_SSL=1 npm run dev # plain http for local look-dev
 ```
 
-Open on desktop for the orbit/drag view, or tap **enter immersive** in
-Safari on Vision Pro (same Wi-Fi, accept the certificate warning once).
-Append `#debug` for the lil-gui panel.
+Open on desktop for the orbit/drag view, or tap **ENTER VR** (three's
+standard VRButton) in Safari on Vision Pro (same Wi-Fi, accept the
+certificate warning once). Append `#debug` for the lil-gui panel.
 
 ## interactions
 
@@ -26,9 +26,11 @@ Append `#debug` for the lil-gui panel.
   the globe rotates by the exact corresponding surface arc, any direction
   (shred's grab-and-pull locomotion, re-aimed at an object). Release with
   motion to throw; it keeps spinning with damped momentum. Works both with
-  hand-tracking joints and the system-pinch transient-pointer.
+  hand-tracking joints and the system-pinch transient-pointer. Hand joints
+  render as matte dots. Touch a column with the **left index fingertip**
+  to inspect it — city, country, facility count on a floating label.
 - **Desktop** — left-drag: arcball (grabbed point stays under cursor);
-  right-drag: orbit; wheel: dolly.
+  right-drag: orbit; wheel: dolly. Hover a column for the same site info.
 
 The globe is a 12-inch (0.30 m) instrument placed 0.55 m in front of your
 head at session start.

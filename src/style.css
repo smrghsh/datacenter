@@ -70,39 +70,31 @@ body {
   text-decoration-color: currentColor;
 }
 
-#controls {
+#tooltip {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
-  display: flex;
-  gap: 10px;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  user-select: none;
   font-family: "SF Mono", ui-monospace, Menlo, monospace;
-}
-
-#controls button {
-  appearance: none;
+  font-size: 0.7rem;
+  line-height: 1.5;
   color: #e6ebf2;
-  font: inherit;
-  font-size: 0.78rem;
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.055);
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: rgba(10, 16, 26, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+  z-index: 10;
 }
 
-#controls button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+#tooltip .t-count {
+  color: #ffcf8a;
+  opacity: 0.92;
 }
 
-#controls button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-body.xr-active #hud,
-body.xr-active #controls {
+body.xr-active #hud {
   opacity: 0;
 }

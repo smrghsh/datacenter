@@ -18,23 +18,3 @@ experience.on("worldReady", () => {
   };
   requestAnimationFrame(tick);
 });
-
-// ---- ambient audio (user-gesture gated) ----
-const audio = document.getElementById("ambient");
-const soundBtn = document.getElementById("sound");
-audio.volume = 0.35;
-let soundOn = false;
-
-function setSound(on) {
-  soundOn = on;
-  soundBtn.textContent = on ? "sound on" : "sound off";
-  soundBtn.setAttribute("aria-pressed", String(on));
-  if (on) audio.play().catch(() => {});
-  else audio.pause();
-}
-soundBtn.addEventListener("click", () => setSound(!soundOn));
-
-// Entering immersive counts as a gesture: bring the hum with you.
-experience.on("xrSessionStarted", () => {
-  if (!soundOn) setSound(true);
-});

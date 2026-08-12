@@ -11,6 +11,7 @@ import XRManager from "./XR/XRManager.js";
 import Hands from "./XR/Hands.js";
 import GlobeGrab from "./XR/GlobeGrab.js";
 import MouseGlobeDrag from "../interaction/MouseGlobeDrag.js";
+import SiteInspector from "../interaction/SiteInspector.js";
 import sources from "./sources.js";
 
 let instance = null;
@@ -45,6 +46,7 @@ export default class Experience extends EventEmitter {
     this.hands = new Hands();
     this.globeGrab = new GlobeGrab();
     this.mouseDrag = new MouseGlobeDrag();
+    this.siteInspector = new SiteInspector();
 
     this.sizes.on("resize", () => {
       this.camera.resize();
@@ -75,6 +77,7 @@ export default class Experience extends EventEmitter {
     this.cameraGroup.updateMatrixWorld();
     this.camera.instance.updateMatrixWorld();
     this.world.update(dt);
+    this.siteInspector.update();
     this.renderer.update();
   }
 }

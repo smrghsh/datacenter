@@ -1,19 +1,22 @@
 import * as THREE from "three";
+import { VRButton } from "three/examples/jsm/webxr/VRButton.js";
 import Experience, { GLOBE_HOME } from "../Experience.js";
 
-// Session lifecycle. Hand-rolled button (not three's VRButton): we want the
-// requestSession failure surfaced, and AVP Safari benefits from explicit
-// optionalFeatures. On the first XR frames we re-place the globe relative to
-// the actual head pose — floor origins differ per device/seating.
+// Session lifecycle via three's standard VRButton (hand-tracking appended to
+// its optionalFeatures). On the first XR frames we re-place the globe
+// relative to the actual head pose — floor origins differ per device/seating.
 export default class XRManager {
   constructor() {
     this.experience = new Experience();
     this.renderer = this.experience.renderer.instance;
-    this.session = null;
     this._placed = false;
     this._framesSeen = 0;
 
-    this.setButton();
+    document.body.appendChild(
+      VRButton.createButton(this.renderer, {
+        optionalFeatures: ["hand-tracking"],
+      })
+    );
 
     this.renderer.xr.addEventListener("sessionstart", () => {
       this._placed = false;
@@ -24,47 +27,6 @@ export default class XRManager {
       document.body.classList.remove("xr-active");
       // restore the desktop composition
       this.experience.world.globe?.group.position.copy(GLOBE_HOME);
-    });
-  }
-
-  setButton() {
-    const button = document.getElementById("enter-xr");
-    if (!button) return;
-    if (!("xr" in navigator)) {
-      button.textContent = "webxr unavailable";
-      button.disabled = true;
-      return;
-    }
-    navigator.xr
-      .isSessionSupported("immersive-vr")
-      .then((ok) => {
-        if (!ok) {
-          button.textContent = "immersive-vr unsupported";
-          button.disabled = true;
-        }
-      })
-      .catch(() => {});
-
-    button.addEventListener("click", async () => {
-      if (this.session) {
-        this.session.end();
-        return;
-      }
-      try {
-        this.session = await navigator.xr.requestSession("immersive-vr", {
-          optionalFeatures: ["hand-tracking", "local-floor"],
-        });
-        this.session.addEventListener("end", () => {
-          this.session = null;
-          button.textContent = "enter immersive";
-        });
-        await this.renderer.xr.setSession(this.session);
-        button.textContent = "exit immersive";
-        this.experience.trigger("xrSessionStarted");
-      } catch (err) {
-        console.error("[xr] requestSession failed:", err);
-        button.textContent = `xr failed: ${err.message ?? err}`.slice(0, 60);
-      }
     });
   }
 

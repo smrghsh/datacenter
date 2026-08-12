@@ -66,5 +66,16 @@ export default class DataPoints {
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
+  // Ramp colour of site i (the inspector restores highlights through this).
+  colorFor(i, out = new THREE.Color()) {
+    const t = Math.sqrt(this.sites[i].n) / Math.sqrt(this.maxN);
+    return out.copy(RAMP_LOW).lerp(RAMP_HIGH, Math.pow(t, 0.6));
+  }
+
+  // Column height of site i in metres.
+  heightFor(i) {
+    return this.params.baseHeight + this.params.heightScale * Math.sqrt(this.sites[i].n);
+  }
+
   update() {}
 }

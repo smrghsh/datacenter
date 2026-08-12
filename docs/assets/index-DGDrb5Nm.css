@@ -1,0 +1,100 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: #04070d;
+  overflow: hidden;
+}
+
+.webgl {
+  position: fixed;
+  inset: 0;
+  outline: none;
+  display: block;
+}
+
+#hud {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  color: #e6ebf2;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  pointer-events: none;
+  user-select: none;
+}
+
+#hud .glass {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+#hud .n {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+#hud .l {
+  font-size: 0.78rem;
+  opacity: 0.55;
+  margin-top: 2px;
+}
+
+#hud .credit {
+  font-size: 0.62rem;
+  opacity: 0.38;
+  margin-top: 10px;
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+#hud .credit a {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(230, 235, 242, 0.4);
+}
+
+#hud .credit a:hover {
+  text-decoration-color: currentColor;
+}
+
+#tooltip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  user-select: none;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: #e6ebf2;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: rgba(10, 16, 26, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+#tooltip .t-count {
+  color: #ffcf8a;
+  opacity: 0.92;
+}
+
+body.xr-active #hud {
+  opacity: 0;
+}
