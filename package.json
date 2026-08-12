@@ -1,0 +1,20 @@
+{
+  "name": "datacenter-globe",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "the whole earth hums — 18,110 data centers on a hand-held globe, WebXR",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lil-gui": "^0.19.2",
+    "three": "^0.185.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "vite": "^5.4.0"
+  }
+}

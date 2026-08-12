@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>data center — the whole earth hums</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; }
+  #hud {
+    position: fixed; left: 24px; bottom: 24px; color: #fff;
+    font-family: "SF Mono", ui-monospace, monospace; pointer-events: none;
+  }
+  #hud .n { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.02em; }
+  #hud .l { font-size: 0.8rem; opacity: 0.55; margin-top: 2px; }
+  #hud .glass {
+    display: inline-block; padding: 10px 16px; border-radius: 14px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="hud"><div class="glass"><div class="n" id="count">0</div><div class="l">data centers · ATLAS dataset</div></div></div>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0, 0.6, 3.1);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.6;
+
+// ── the dark earth: a barely-there sphere, rim-lit ──
+const globe = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 96, 96),
+  new THREE.MeshBasicMaterial({ color: 0x0a0e16 })
+);
+scene.add(globe);
+// fresnel rim glow
+const rim = new THREE.Mesh(
+  new THREE.SphereGeometry(1.002, 96, 96),
+  new THREE.ShaderMaterial({
+    transparent: true, blending: THREE.AdditiveBlending, side: THREE.BackSide,
+    vertexShader: `varying vec3 vN; varying vec3 vP;
+      void main(){ vN = normalize(normalMatrix * normal); vP = (modelViewMatrix * vec4(position,1.)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position*1.06,1.); }`,
+    fragmentShader: `varying vec3 vN; varying vec3 vP;
+      void main(){ float f = pow(1. - abs(dot(normalize(vN), normalize(-vP))), 3.);
+      gl_FragColor = vec4(vec3(0.35,0.55,1.0)*f, f*0.6); }`
+  })
+);
+scene.add(rim);
+
+// ── lat/lon → unit sphere ──
+const toSphere = (lat, lon, r=1.005) => {
+  const phi = (90 - lat) * Math.PI/180, theta = (lon + 180) * Math.PI/180;
+  return new THREE.Vector3(
+    -r * Math.sin(phi) * Math.cos(theta),
+     r * Math.cos(phi),
+     r * Math.sin(phi) * Math.sin(theta)
+  );
+};
+
+// ── the swarm ──
+const res = await fetch("./data/datacenters.geojson");
+const gj = await res.json();
+// aggregate identical coords → intensity
+const agg = new Map();
+for (const f of gj.features) {
+  const [lon, lat] = f.geometry.coordinates;
+  const k = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  agg.set(k, (agg.get(k) || 0) + 1);
+}
+const pts = [], sizes = [];
+for (const [k, n] of agg) {
+  const [lat, lon] = k.split(",").map(Number);
+  const p = toSphere(lat, lon);
+  pts.push(p.x, p.y, p.z);
+  sizes.push(Math.min(1, 0.35 + Math.log2(1+n)*0.18));
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+geo.setAttribute("aSize", new THREE.Float32BufferAttribute(sizes, 1));
+const swarm = new THREE.Points(geo, new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `attribute float aSize; varying float vS; uniform float uTime;
+    void main(){ vS = aSize;
+      vec4 mv = modelViewMatrix * vec4(position,1.);
+      float tw = 0.85 + 0.15*sin(uTime*2.0 + position.x*40. + position.y*30.);
+      gl_PointSize = aSize * tw * 5.5 * (300. / -mv.z) / 100.;
+      gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying float vS;
+    void main(){ float d = length(gl_PointCoord - 0.5);
+      float a = smoothstep(0.5, 0.0, d);
+      vec3 c = mix(vec3(1.0,0.45,0.15), vec3(0.4,0.75,1.0), vS); // small=ember, dense=cold blue
+      gl_FragColor = vec4(c, a*a); }`
+}));
+scene.add(swarm);
+
+// count-up
+const total = gj.features.length;
+const el = document.getElementById("count");
+let shown = 0;
+const tick0 = performance.now();
+
+renderer.setAnimationLoop((t) => {
+  swarm.material.uniforms.uTime.value = t/1000;
+  if (shown < total) {
+    shown = Math.min(total, Math.floor((t - tick0) / 2.2));
+    el.textContent = shown.toLocaleString();
+  }
+  controls.update();
+  renderer.render(scene, camera);
+});
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
