@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>data center — the whole earth hums</title>
+    <script type="module" crossorigin src="./assets/index-D-oazoLu.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BkdL5Hb1.css">
+  </head>
+  <body>
+    <canvas class="webgl"></canvas>
+
+    <div id="hud">
+      <div class="glass">
+        <div class="n" id="count">0</div>
+        <div class="l">data centers · ATLAS dataset</div>
+      </div>
+      <div class="credit">
+        source: Ringmast4r / Global-Data-Center-Map ·
+        <span id="coverage"></span> facilities geocoded (GeoNames)
+      </div>
+    </div>
+
+    <div id="controls">
+      <button id="enter-xr">enter immersive</button>
+      <button id="sound" aria-pressed="false">sound off</button>
+    </div>
+
+    <audio id="ambient" src="./audio/ambient.m4a" loop preload="auto"></audio>
+
+  </body>
+</html>
