@@ -26,8 +26,9 @@ certificate warning once). Append `#debug` for the lil-gui panel.
   the globe rotates by the exact corresponding surface arc, any direction
   (shred's grab-and-pull locomotion, re-aimed at an object). Release with
   motion to throw; it keeps spinning with damped momentum. Works both with
-  hand-tracking joints and the system-pinch transient-pointer. Hand joints
-  render as matte dots. Touch a column with the **left index fingertip**
+  hand-tracking joints and the system-pinch transient-pointer. Hands render
+  as three's standard skinned mesh (WebXR generic-hand profile, vendored
+  locally). Touch a column with the **left index fingertip**
   to inspect it — city, country, facility count on a floating label.
 - **Desktop** — left-drag: arcball (grabbed point stays under cursor);
   right-drag: orbit; wheel: dolly. Hover a column for the same site info.

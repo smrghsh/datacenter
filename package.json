@@ -15,6 +15,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "@webxr-input-profiles/assets": "^1.0.20",
     "vite": "^5.4.0"
   }
 }
