@@ -30,9 +30,9 @@ export default class XRManager {
     });
   }
 
-  // Place the globe 0.55 m along the head's horizontal forward, slightly
-  // below eye level. Wait a few frames for a real pose (first frames can be
-  // identity on some devices).
+  // Place the globe 0.7 m along the head's horizontal forward (nearest
+  // surface ~0.4 m away), slightly below eye level. Wait a few frames for a
+  // real pose (first frames can be identity on some devices).
   placeGlobe() {
     const cam = this.renderer.xr.getCamera();
     const headPos = new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld);
@@ -47,8 +47,8 @@ export default class XRManager {
     if (!globe) return false;
     globe.group.position
       .copy(headPos)
-      .addScaledVector(forward, 0.55)
-      .add(new THREE.Vector3(0, -0.06, 0));
+      .addScaledVector(forward, 0.7)
+      .add(new THREE.Vector3(0, -0.12, 0));
     return true;
   }
 

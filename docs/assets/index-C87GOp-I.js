@@ -33184,9 +33184,9 @@ class Camera2 {
       120
     );
     this.instance.position.set(
-      GLOBE_HOME.x + 0.05,
-      GLOBE_HOME.y + 0.06,
-      GLOBE_HOME.z + 0.62
+      GLOBE_HOME.x + 0.1,
+      GLOBE_HOME.y + 0.12,
+      GLOBE_HOME.z + 1.24
     );
     this.experience.cameraGroup.add(this.instance);
   }
@@ -33195,7 +33195,7 @@ class Camera2 {
     this.controls.target.copy(GLOBE_HOME);
     this.controls.enableDamping = true;
     this.controls.enablePan = false;
-    this.controls.minDistance = 0.22;
+    this.controls.minDistance = 0.44;
     this.controls.maxDistance = 3;
     this.controls.mouseButtons = {
       LEFT: null,
@@ -33265,11 +33265,11 @@ class DataPoints {
     const sites = this.experience.resources.items.sites.sites;
     this.sites = sites;
     this.params = {
-      baseHeight: 16e-4,
+      baseHeight: 32e-4,
       // metres, n = 1
-      heightScale: 115e-5,
+      heightScale: 23e-4,
       // metres per sqrt(n)
-      width: 11e-4
+      width: 22e-4
       // column thickness, metres
     };
     const maxN = sites.reduce((m, s) => Math.max(m, s.n), 1);
@@ -33283,9 +33283,9 @@ class DataPoints {
     parent.add(this.mesh);
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("data");
-      f.add(this.params, "baseHeight", 5e-4, 6e-3, 1e-4).onChange(() => this.rebuild());
-      f.add(this.params, "heightScale", 2e-4, 4e-3, 1e-4).onChange(() => this.rebuild());
-      f.add(this.params, "width", 4e-4, 3e-3, 1e-4).onChange(() => this.rebuild());
+      f.add(this.params, "baseHeight", 1e-3, 0.012, 2e-4).onChange(() => this.rebuild());
+      f.add(this.params, "heightScale", 4e-4, 8e-3, 2e-4).onChange(() => this.rebuild());
+      f.add(this.params, "width", 8e-4, 6e-3, 2e-4).onChange(() => this.rebuild());
       f.close();
     }
   }
@@ -33394,7 +33394,7 @@ class Globe {
       f.addColor(PALETTE, "land").onChange(
         (v) => this.land.material.uniforms.uColor.value.set(v)
       );
-      f.add(this.land.material.uniforms.uSize, "value", 2e-4, 25e-4, 1e-4).name("landDotSize");
+      f.add(this.land.material.uniforms.uSize, "value", 4e-4, 5e-3, 2e-4).name("landDotSize");
       f.add(this.atmosphere.material.uniforms.uIntensity, "value", 0, 2, 0.01).name("atmosphere");
       f.close();
     }
@@ -33431,7 +33431,7 @@ class Globe {
         depthWrite: false,
         uniforms: {
           uColor: { value: new Color(PALETTE.land) },
-          uSize: { value: 11e-4 },
+          uSize: { value: 22e-4 },
           // dot diameter, metres
           uVh: { value: window.innerHeight }
           // viewport px height, set per-frame
@@ -33996,9 +33996,9 @@ class XRManager {
       (_a = this.experience.world.globe) == null ? void 0 : _a.group.position.copy(GLOBE_HOME);
     });
   }
-  // Place the globe 0.55 m along the head's horizontal forward, slightly
-  // below eye level. Wait a few frames for a real pose (first frames can be
-  // identity on some devices).
+  // Place the globe 0.7 m along the head's horizontal forward (nearest
+  // surface ~0.4 m away), slightly below eye level. Wait a few frames for a
+  // real pose (first frames can be identity on some devices).
   placeGlobe() {
     const cam = this.renderer.xr.getCamera();
     const headPos = new Vector3().setFromMatrixPosition(cam.matrixWorld);
@@ -34009,7 +34009,7 @@ class XRManager {
     forward.normalize();
     const globe = this.experience.world.globe;
     if (!globe) return false;
-    globe.group.position.copy(headPos).addScaledVector(forward, 0.55).add(new Vector3(0, -0.06, 0));
+    globe.group.position.copy(headPos).addScaledVector(forward, 0.7).add(new Vector3(0, -0.12, 0));
     return true;
   }
   update() {
@@ -37127,8 +37127,8 @@ class MouseGlobeDrag {
     this._velocitySamples.length = 0;
   }
 }
-const PICK_ARC = 5e-3;
-const TOUCH_RADIUS = 0.014;
+const PICK_ARC = 0.01;
+const TOUCH_RADIUS = 0.02;
 const HIGHLIGHT = new Color("#ffffff");
 class SiteInspector {
   constructor() {
@@ -37321,8 +37321,8 @@ const sources = [
   { name: "land", type: "binary", path: "./data/land.bin" }
 ];
 let instance = null;
-const GLOBE_RADIUS = 0.15;
-const GLOBE_HOME = new Vector3(0, 1.25, -0.55);
+const GLOBE_RADIUS = 0.3;
+const GLOBE_HOME = new Vector3(0, 1.25, -0.7);
 class Experience extends EventEmitter {
   constructor(canvas) {
     super();
@@ -37388,4 +37388,4 @@ experience.on("worldReady", () => {
   };
   requestAnimationFrame(tick);
 });
-//# sourceMappingURL=index-CA8JUQO3.js.map
+//# sourceMappingURL=index-C87GOp-I.js.map

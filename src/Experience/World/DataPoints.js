@@ -16,9 +16,9 @@ export default class DataPoints {
     this.sites = sites;
 
     this.params = {
-      baseHeight: 0.0016, // metres, n = 1
-      heightScale: 0.00115, // metres per sqrt(n)
-      width: 0.0011, // column thickness, metres
+      baseHeight: 0.0032, // metres, n = 1
+      heightScale: 0.0023, // metres per sqrt(n)
+      width: 0.0022, // column thickness, metres
     };
 
     const maxN = sites.reduce((m, s) => Math.max(m, s.n), 1);
@@ -34,9 +34,9 @@ export default class DataPoints {
 
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("data");
-      f.add(this.params, "baseHeight", 0.0005, 0.006, 0.0001).onChange(() => this.rebuild());
-      f.add(this.params, "heightScale", 0.0002, 0.004, 0.0001).onChange(() => this.rebuild());
-      f.add(this.params, "width", 0.0004, 0.003, 0.0001).onChange(() => this.rebuild());
+      f.add(this.params, "baseHeight", 0.001, 0.012, 0.0002).onChange(() => this.rebuild());
+      f.add(this.params, "heightScale", 0.0004, 0.008, 0.0002).onChange(() => this.rebuild());
+      f.add(this.params, "width", 0.0008, 0.006, 0.0002).onChange(() => this.rebuild());
       f.close();
     }
   }

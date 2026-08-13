@@ -46,7 +46,7 @@ export default class Globe {
       f.addColor(PALETTE, "land").onChange((v) =>
         this.land.material.uniforms.uColor.value.set(v)
       );
-      f.add(this.land.material.uniforms.uSize, "value", 0.0002, 0.0025, 0.0001).name("landDotSize");
+      f.add(this.land.material.uniforms.uSize, "value", 0.0004, 0.005, 0.0002).name("landDotSize");
       f.add(this.atmosphere.material.uniforms.uIntensity, "value", 0, 2, 0.01).name("atmosphere");
       f.close();
     }
@@ -87,7 +87,7 @@ export default class Globe {
         depthWrite: false,
         uniforms: {
           uColor: { value: new THREE.Color(PALETTE.land) },
-          uSize: { value: 0.0011 }, // dot diameter, metres
+          uSize: { value: 0.0022 }, // dot diameter, metres
           uVh: { value: window.innerHeight }, // viewport px height, set per-frame
         },
         vertexShader: /* glsl */ `

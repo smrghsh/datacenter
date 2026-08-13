@@ -33,7 +33,7 @@ certificate warning once). Append `#debug` for the lil-gui panel.
 - **Desktop** — left-drag: arcball (grabbed point stays under cursor);
   right-drag: orbit; wheel: dolly. Hover a column for the same site info.
 
-The globe is a 12-inch (0.30 m) instrument placed 0.55 m in front of your
+The globe is a 24-inch (0.61 m) instrument placed 0.7 m in front of your
 head at session start.
 
 ## architecture

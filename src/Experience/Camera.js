@@ -22,9 +22,9 @@ export default class Camera {
     );
     // Desktop framing: eye-level with the globe, close enough to fill frame.
     this.instance.position.set(
-      GLOBE_HOME.x + 0.05,
-      GLOBE_HOME.y + 0.06,
-      GLOBE_HOME.z + 0.62
+      GLOBE_HOME.x + 0.1,
+      GLOBE_HOME.y + 0.12,
+      GLOBE_HOME.z + 1.24
     );
     this.experience.cameraGroup.add(this.instance);
   }
@@ -34,7 +34,7 @@ export default class Camera {
     this.controls.target.copy(GLOBE_HOME);
     this.controls.enableDamping = true;
     this.controls.enablePan = false;
-    this.controls.minDistance = 0.22;
+    this.controls.minDistance = 0.44;
     this.controls.maxDistance = 3.0;
     // LEFT drag is the globe's (trackball rotation); RIGHT orbits the camera.
     this.controls.mouseButtons = {

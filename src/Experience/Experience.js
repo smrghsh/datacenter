@@ -16,10 +16,10 @@ import sources from "./sources.js";
 
 let instance = null;
 
-// The globe is a hand-held object: <= 12 inch diameter (0.3048 m), floating
+// The globe is a hand-held object: 24 inch diameter (0.61 m), floating
 // in front of the viewer. All world units are metres (WebXR requirement).
-export const GLOBE_RADIUS = 0.15;
-export const GLOBE_HOME = new THREE.Vector3(0, 1.25, -0.55);
+export const GLOBE_RADIUS = 0.3;
+export const GLOBE_HOME = new THREE.Vector3(0, 1.25, -0.7);
 
 export default class Experience extends EventEmitter {
   constructor(canvas) {

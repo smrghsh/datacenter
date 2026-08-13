@@ -6,8 +6,8 @@ import { latLngToVec3 } from "../Experience/World/geo.js";
 // (the right hand is the grab hand). The picked column brightens and shows
 // city / country / facility count — an HTML tooltip at the cursor on
 // desktop, a billboard label at the column tip in XR.
-const PICK_ARC = 0.005; // m of surface arc around a column (desktop hover)
-const TOUCH_RADIUS = 0.014; // m fingertip-to-column (XR touch)
+const PICK_ARC = 0.01; // m of surface arc around a column (desktop hover)
+const TOUCH_RADIUS = 0.02; // m fingertip-to-column (XR touch)
 const HIGHLIGHT = new THREE.Color("#ffffff");
 
 export default class SiteInspector {
