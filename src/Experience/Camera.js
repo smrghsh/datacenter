@@ -42,6 +42,13 @@ export default class Camera {
       MIDDLE: THREE.MOUSE.DOLLY,
       RIGHT: THREE.MOUSE.ROTATE,
     };
+    // Same split on touch: one finger is the globe's arcball (MouseGlobeDrag),
+    // two fingers pinch-zoom / orbit. Without this, OrbitControls' default
+    // one-finger rotate fights the arcball.
+    this.controls.touches = {
+      ONE: null,
+      TWO: THREE.TOUCH.DOLLY_ROTATE,
+    };
   }
 
   resize() {

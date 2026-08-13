@@ -4,6 +4,11 @@
 [ATLAS dataset](https://github.com/Ringmast4r/Global-Data-Center-Map) on a
 hand-held globe. Vanilla three.js, WebXR, tuned for Apple Vision Pro.
 
+**[Live: smrghsh.github.io/datacenter](https://smrghsh.github.io/datacenter/)**
+
+![The globe: amber columns for facility density on dot-matrix continents,
+hovering Ashburn — 145 facilities](static/screenshot.jpg)
+
 Matte, scientific info-layer: dot-matrix continents (Natural Earth 50m),
 15° graticule, one amber ramp for facility density (height ∝ √count).
 Environment: seeded starfield, Milky Way band, galaxy sprites.

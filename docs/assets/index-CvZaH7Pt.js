@@ -33202,6 +33202,10 @@ class Camera2 {
       MIDDLE: MOUSE.DOLLY,
       RIGHT: MOUSE.ROTATE
     };
+    this.controls.touches = {
+      ONE: null,
+      TWO: TOUCH.DOLLY_ROTATE
+    };
   }
   resize() {
     this.instance.aspect = this.sizes.width / this.sizes.height;
@@ -37065,6 +37069,7 @@ class MouseGlobeDrag {
     this.canvas.addEventListener("pointerdown", (e) => this.onDown(e));
     window.addEventListener("pointermove", (e) => this.onMove(e));
     window.addEventListener("pointerup", () => this.onUp());
+    window.addEventListener("pointercancel", () => this.onUp());
   }
   _dirAt(e, mustHit) {
     const globe = this.experience.world.globe;
@@ -37088,6 +37093,10 @@ class MouseGlobeDrag {
   }
   onDown(e) {
     if (e.button !== 0 || this.experience.isXRActive()) return;
+    if (e.pointerType === "touch" && this.dragging) {
+      this.onUp();
+      return;
+    }
     const dir = this._dirAt(e, true);
     if (!dir) return;
     this.dragging = true;
@@ -37388,4 +37397,4 @@ experience.on("worldReady", () => {
   };
   requestAnimationFrame(tick);
 });
-//# sourceMappingURL=index-C87GOp-I.js.map
+//# sourceMappingURL=index-CvZaH7Pt.js.map

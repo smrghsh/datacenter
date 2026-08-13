@@ -20,6 +20,7 @@ export default class MouseGlobeDrag {
     this.canvas.addEventListener("pointerdown", (e) => this.onDown(e));
     window.addEventListener("pointermove", (e) => this.onMove(e));
     window.addEventListener("pointerup", () => this.onUp());
+    window.addEventListener("pointercancel", () => this.onUp());
   }
 
   _dirAt(e, mustHit) {
@@ -46,6 +47,11 @@ export default class MouseGlobeDrag {
 
   onDown(e) {
     if (e.button !== 0 || this.experience.isXRActive()) return;
+    // A second finger means pinch-zoom/orbit (OrbitControls) — let go.
+    if (e.pointerType === "touch" && this.dragging) {
+      this.onUp();
+      return;
+    }
     const dir = this._dirAt(e, true);
     if (!dir) return;
     this.dragging = true;
