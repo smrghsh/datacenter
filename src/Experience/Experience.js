@@ -10,6 +10,7 @@ import World from "./World/World.js";
 import XRManager from "./XR/XRManager.js";
 import Hands from "./XR/Hands.js";
 import GlobeGrab from "./XR/GlobeGrab.js";
+import PalmMenu from "./XR/PalmMenu.js";
 import MouseGlobeDrag from "../interaction/MouseGlobeDrag.js";
 import SiteInspector from "../interaction/SiteInspector.js";
 import sources from "./sources.js";
@@ -29,6 +30,7 @@ export default class Experience extends EventEmitter {
     window.experience = this;
 
     this.canvas = canvas;
+    this.view = "columns";
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.scene = new THREE.Scene();
@@ -45,6 +47,7 @@ export default class Experience extends EventEmitter {
     this.xr = new XRManager();
     this.hands = new Hands();
     this.globeGrab = new GlobeGrab();
+    this.palmMenu = new PalmMenu();
     this.mouseDrag = new MouseGlobeDrag();
     this.siteInspector = new SiteInspector();
 
@@ -63,6 +66,18 @@ export default class Experience extends EventEmitter {
     return this.renderer?.instance.xr.isPresenting === true;
   }
 
+  // "columns" | "heatmap" — one saturated data layer at a time.
+  setView(mode) {
+    if (mode === this.view) return;
+    this.view = mode;
+    const globe = this.world.globe;
+    if (globe) {
+      globe.dataPoints.mesh.visible = mode === "columns";
+      globe.heatmap.mesh.visible = mode === "heatmap";
+    }
+    this.trigger("viewChanged", [mode]);
+  }
+
   update() {
     const now = performance.now();
     this.time.delta = Math.min(now - this._lastFrameTime, 100);
@@ -73,6 +88,7 @@ export default class Experience extends EventEmitter {
     this.xr.update();
     this.hands.update(dt);
     this.globeGrab.update(dt);
+    this.palmMenu.update();
     if (!this.isXRActive()) this.camera.update();
     this.cameraGroup.updateMatrixWorld();
     this.camera.instance.updateMatrixWorld();

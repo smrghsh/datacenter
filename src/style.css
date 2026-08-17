@@ -71,6 +71,43 @@ body {
   text-decoration-color: currentColor;
 }
 
+#view-toggle {
+  position: fixed;
+  left: 24px;
+  top: 24px;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+}
+
+#view-toggle button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #e6ebf2;
+  opacity: 0.55;
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 7px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+#view-toggle button[aria-checked="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.xr-active #view-toggle {
+  opacity: 0;
+}
+
 #tooltip {
   position: fixed;
   left: 0;

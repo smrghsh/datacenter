@@ -9,6 +9,11 @@
   <body>
     <canvas class="webgl"></canvas>
 
+    <div id="view-toggle" role="radiogroup" aria-label="data view">
+      <button data-view="columns" aria-checked="true">columns</button>
+      <button data-view="heatmap" aria-checked="false">heatmap</button>
+    </div>
+
     <div id="hud">
       <div class="glass">
         <div class="n" id="count">0</div>

@@ -2,6 +2,18 @@ import Experience from "./Experience/Experience.js";
 
 const experience = new Experience(document.querySelector("canvas.webgl"));
 
+// ---- view toggle (top left) ----
+const viewToggle = document.getElementById("view-toggle");
+viewToggle.addEventListener("click", (e) => {
+  const mode = e.target.dataset?.view;
+  if (mode) experience.setView(mode);
+});
+experience.on("viewChanged", (mode) => {
+  for (const b of viewToggle.querySelectorAll("button")) {
+    b.setAttribute("aria-checked", String(b.dataset.view === mode));
+  }
+});
+
 // ---- HUD: count-up + coverage note ----
 experience.on("worldReady", () => {
   const data = experience.resources.items.sites;

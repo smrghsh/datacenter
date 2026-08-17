@@ -3,6 +3,7 @@ import Experience, { GLOBE_RADIUS, GLOBE_HOME } from "../Experience.js";
 import { latLngToVec3 } from "./geo.js";
 import DataPoints from "./DataPoints.js";
 import Graticule from "./Graticule.js";
+import Heatmap from "./Heatmap.js";
 
 // Matte scientific palette. Land/ocean/graticule are recessive context; the
 // data (amber columns) is the only saturated layer.
@@ -36,6 +37,7 @@ export default class Globe {
     this.setAtmosphere();
     this.graticule = new Graticule(this.group);
     this.dataPoints = new DataPoints(this.group);
+    this.heatmap = new Heatmap(this.group);
 
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("globe");

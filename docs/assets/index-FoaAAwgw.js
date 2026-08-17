@@ -33365,6 +33365,100 @@ class Graticule {
     parent.add(this.lines);
   }
 }
+const W = 2048;
+const H = 1024;
+const SIGMA_PX = 9;
+const GAMMA = 0.35;
+const STOPS = [
+  { t: 0, c: [94, 64, 31], a: 0 },
+  { t: 0.25, c: [94, 64, 31], a: 0.5 },
+  { t: 0.6, c: [201, 143, 74], a: 0.8 },
+  { t: 1, c: [255, 233, 196], a: 0.95 }
+];
+function ramp(t) {
+  let lo = STOPS[0];
+  let hi = STOPS[STOPS.length - 1];
+  for (let i = 0; i < STOPS.length - 1; i++) {
+    if (t >= STOPS[i].t && t <= STOPS[i + 1].t) {
+      lo = STOPS[i];
+      hi = STOPS[i + 1];
+      break;
+    }
+  }
+  const f = hi.t === lo.t ? 0 : (t - lo.t) / (hi.t - lo.t);
+  return [
+    lo.c[0] + (hi.c[0] - lo.c[0]) * f,
+    lo.c[1] + (hi.c[1] - lo.c[1]) * f,
+    lo.c[2] + (hi.c[2] - lo.c[2]) * f,
+    (lo.a + (hi.a - lo.a) * f) * 255
+  ];
+}
+class Heatmap {
+  constructor(parent) {
+    this.experience = new Experience();
+    const sites = this.experience.resources.items.sites.sites;
+    const intensity = this.splat(sites);
+    const texture = this.colorize(intensity);
+    this.mesh = new Mesh(
+      new SphereGeometry(GLOBE_RADIUS * 1.003, 96, 96),
+      new MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        depthWrite: false
+      })
+    );
+    this.mesh.renderOrder = 2;
+    this.mesh.visible = false;
+    parent.add(this.mesh);
+  }
+  splat(sites) {
+    const buf = new Float32Array(W * H);
+    for (const s of sites) {
+      const w = Math.sqrt(s.n);
+      const cx = (s.lng + 180) / 360 * W;
+      const cy = (90 - s.lat) / 180 * H;
+      const sy = SIGMA_PX;
+      const sx = SIGMA_PX / Math.max(Math.cos(s.lat * Math.PI / 180), 0.2);
+      const ry = Math.ceil(3 * sy);
+      const rx = Math.ceil(3 * sx);
+      for (let dy = -ry; dy <= ry; dy++) {
+        const y = Math.round(cy) + dy;
+        if (y < 0 || y >= H) continue;
+        const gy = dy / sy;
+        for (let dx = -rx; dx <= rx; dx++) {
+          const x = ((Math.round(cx) + dx) % W + W) % W;
+          const gx = dx / sx;
+          buf[y * W + x] += w * Math.exp(-0.5 * (gx * gx + gy * gy));
+        }
+      }
+    }
+    return buf;
+  }
+  colorize(intensity) {
+    let max = 0;
+    for (let i = 0; i < intensity.length; i++) {
+      if (intensity[i] > max) max = intensity[i];
+    }
+    const img = new ImageData(W, H);
+    for (let i = 0; i < intensity.length; i++) {
+      if (intensity[i] === 0) continue;
+      const t = Math.pow(intensity[i] / max, GAMMA);
+      const [r, g, b, a] = ramp(t);
+      img.data[i * 4] = r;
+      img.data[i * 4 + 1] = g;
+      img.data[i * 4 + 2] = b;
+      img.data[i * 4 + 3] = a;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    canvas.getContext("2d").putImageData(img, 0, 0);
+    const texture = new CanvasTexture(canvas);
+    texture.colorSpace = SRGBColorSpace;
+    texture.anisotropy = 4;
+    return texture;
+  }
+}
 const PALETTE = {
   ocean: "#101c30",
   land: "#93a8c2",
@@ -33389,6 +33483,7 @@ class Globe {
     this.setAtmosphere();
     this.graticule = new Graticule(this.group);
     this.dataPoints = new DataPoints(this.group);
+    this.heatmap = new Heatmap(this.group);
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("globe");
       f.add(this.group.position, "y", 0.6, 1.8, 0.01).name("height");
@@ -37055,6 +37150,157 @@ class GlobeGrab {
     this._velocitySamples.length = 0;
   }
 }
+const SHOW_DOT = 0.55;
+const HIDE_DOT = 0.3;
+const CANVAS_W = 512;
+const CANVAS_H = 340;
+const PLANE_W = 0.13;
+const PLANE_H = PLANE_W * CANVAS_H / CANVAS_W;
+const TAP_DEPTH = 0.022;
+const REARM_DEPTH = 0.04;
+const ROWS = [
+  ["columns", 96, 208],
+  ["heatmap", 208, 320]
+];
+class PalmMenu {
+  constructor() {
+    this.experience = new Experience();
+    this.hands = this.experience.hands;
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = CANVAS_W;
+    this.canvas.height = CANVAS_H;
+    this.ctx = this.canvas.getContext("2d");
+    this.texture = new CanvasTexture(this.canvas);
+    this.texture.anisotropy = 4;
+    this.mesh = new Mesh(
+      new PlaneGeometry(PLANE_W, PLANE_H),
+      new MeshBasicMaterial({
+        map: this.texture,
+        transparent: true,
+        depthTest: false
+      })
+    );
+    this.mesh.renderOrder = 11;
+    this.mesh.visible = false;
+    this.experience.scene.add(this.mesh);
+    this.showing = false;
+    this._armed = true;
+    this._v = {
+      wrist: new Vector3(),
+      index: new Vector3(),
+      pinky: new Vector3(),
+      palm: new Vector3(),
+      normal: new Vector3(),
+      head: new Vector3(),
+      tip: new Vector3(),
+      a: new Vector3(),
+      b: new Vector3()
+    };
+    this.draw();
+    this.experience.on("viewChanged", () => this.draw());
+  }
+  draw() {
+    const ctx = this.ctx;
+    const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.fillStyle = "rgba(8, 13, 22, 0.85)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(2, 2, CANVAS_W - 4, CANVAS_H - 4, 34);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = `500 34px ${mono}`;
+    ctx.fillStyle = "rgba(230, 235, 242, 0.5)";
+    ctx.fillText("view", 40, 66);
+    for (const [label, y0, y1] of ROWS) {
+      const active = this.experience.view === label;
+      if (active) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.beginPath();
+        ctx.roundRect(20, y0 + 6, CANVAS_W - 40, y1 - y0 - 12, 22);
+        ctx.fill();
+      }
+      const cy = (y0 + y1) / 2;
+      ctx.beginPath();
+      ctx.arc(64, cy, 15, 0, Math.PI * 2);
+      ctx.strokeStyle = active ? "#ffcf8a" : "rgba(230, 235, 242, 0.4)";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      if (active) {
+        ctx.beginPath();
+        ctx.arc(64, cy, 7, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffcf8a";
+        ctx.fill();
+      }
+      ctx.font = `600 44px ${mono}`;
+      ctx.fillStyle = active ? "#e6ebf2" : "rgba(230, 235, 242, 0.65)";
+      ctx.fillText(label, 108, cy + 15);
+    }
+    this.texture.needsUpdate = true;
+  }
+  _palmFacing() {
+    const hand = this.hands.hand("left");
+    const j = hand == null ? void 0 : hand.joints;
+    const wrist = j == null ? void 0 : j["wrist"];
+    const index = j == null ? void 0 : j["index-finger-metacarpal"];
+    const pinky = j == null ? void 0 : j["pinky-finger-metacarpal"];
+    const middle = j == null ? void 0 : j["middle-finger-metacarpal"];
+    if (!wrist || !index || !pinky || !middle) return null;
+    const v = this._v;
+    wrist.getWorldPosition(v.wrist);
+    index.getWorldPosition(v.index);
+    pinky.getWorldPosition(v.pinky);
+    middle.getWorldPosition(v.palm);
+    v.a.subVectors(v.index, v.wrist);
+    v.b.subVectors(v.pinky, v.wrist);
+    v.normal.crossVectors(v.a, v.b).normalize();
+    const cam = this.experience.renderer.instance.xr.getCamera();
+    v.head.setFromMatrixPosition(cam.matrixWorld);
+    const toHead = v.a.subVectors(v.head, v.palm).normalize();
+    return v.normal.dot(toHead);
+  }
+  update() {
+    var _a, _b;
+    if (!this.experience.isXRActive()) {
+      this.mesh.visible = this.showing = false;
+      return;
+    }
+    const dot = this._palmFacing();
+    if (dot === null) {
+      this.mesh.visible = this.showing = false;
+      return;
+    }
+    if (!this.showing && dot > SHOW_DOT) this.showing = true;
+    if (this.showing && dot < HIDE_DOT) this.showing = false;
+    this.mesh.visible = this.showing;
+    if (!this.showing) return;
+    const v = this._v;
+    this.mesh.position.copy(v.palm).addScaledVector(v.normal, 0.11);
+    this.mesh.lookAt(v.head);
+    this.mesh.updateMatrixWorld();
+    const tip = (_b = (_a = this.hands.hand("right")) == null ? void 0 : _a.joints) == null ? void 0 : _b["index-finger-tip"];
+    if (!tip) return;
+    tip.getWorldPosition(v.tip);
+    const local = this.mesh.worldToLocal(v.tip);
+    const inPlane = Math.abs(local.x) < PLANE_W / 2 && Math.abs(local.y) < PLANE_H / 2;
+    const depth = Math.abs(local.z);
+    if (!this._armed) {
+      if (depth > REARM_DEPTH || !inPlane) this._armed = true;
+      return;
+    }
+    if (inPlane && depth < TAP_DEPTH) {
+      const py = (0.5 - local.y / PLANE_H) * CANVAS_H;
+      for (const [label, y0, y1] of ROWS) {
+        if (py >= y0 && py < y1) {
+          this.experience.setView(label);
+          this._armed = false;
+          break;
+        }
+      }
+    }
+  }
+}
 class MouseGlobeDrag {
   constructor() {
     this.experience = new Experience();
@@ -37339,6 +37585,7 @@ class Experience extends EventEmitter {
     instance = this;
     window.experience = this;
     this.canvas = canvas;
+    this.view = "columns";
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.scene = new Scene();
@@ -37351,6 +37598,7 @@ class Experience extends EventEmitter {
     this.xr = new XRManager();
     this.hands = new Hands();
     this.globeGrab = new GlobeGrab();
+    this.palmMenu = new PalmMenu();
     this.mouseDrag = new MouseGlobeDrag();
     this.siteInspector = new SiteInspector();
     this.sizes.on("resize", () => {
@@ -37365,6 +37613,17 @@ class Experience extends EventEmitter {
     var _a;
     return ((_a = this.renderer) == null ? void 0 : _a.instance.xr.isPresenting) === true;
   }
+  // "columns" | "heatmap" — one saturated data layer at a time.
+  setView(mode) {
+    if (mode === this.view) return;
+    this.view = mode;
+    const globe = this.world.globe;
+    if (globe) {
+      globe.dataPoints.mesh.visible = mode === "columns";
+      globe.heatmap.mesh.visible = mode === "heatmap";
+    }
+    this.trigger("viewChanged", [mode]);
+  }
   update() {
     const now = performance.now();
     this.time.delta = Math.min(now - this._lastFrameTime, 100);
@@ -37374,6 +37633,7 @@ class Experience extends EventEmitter {
     this.xr.update();
     this.hands.update(dt);
     this.globeGrab.update(dt);
+    this.palmMenu.update();
     if (!this.isXRActive()) this.camera.update();
     this.cameraGroup.updateMatrixWorld();
     this.camera.instance.updateMatrixWorld();
@@ -37383,6 +37643,17 @@ class Experience extends EventEmitter {
   }
 }
 const experience = new Experience(document.querySelector("canvas.webgl"));
+const viewToggle = document.getElementById("view-toggle");
+viewToggle.addEventListener("click", (e) => {
+  var _a;
+  const mode = (_a = e.target.dataset) == null ? void 0 : _a.view;
+  if (mode) experience.setView(mode);
+});
+experience.on("viewChanged", (mode) => {
+  for (const b of viewToggle.querySelectorAll("button")) {
+    b.setAttribute("aria-checked", String(b.dataset.view === mode));
+  }
+});
 experience.on("worldReady", () => {
   const data = experience.resources.items.sites;
   const countEl = document.getElementById("count");
@@ -37397,4 +37668,4 @@ experience.on("worldReady", () => {
   };
   requestAnimationFrame(tick);
 });
-//# sourceMappingURL=index-CvZaH7Pt.js.map
+//# sourceMappingURL=index-FoaAAwgw.js.map

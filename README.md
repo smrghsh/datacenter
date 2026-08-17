@@ -38,6 +38,14 @@ certificate warning once). Append `#debug` for the lil-gui panel.
 - **Desktop** — left-drag: arcball (grabbed point stays under cursor);
   right-drag: orbit; wheel: dolly. Hover a column for the same site info.
 
+## views
+
+Two data layers, one visible at a time: **columns** (height ∝ √count) and
+**heatmap** (gaussian splats through the same amber ramp, √count-weighted,
+baked once into a 2048×1024 equirect texture). Toggle top-left on desktop;
+in XR, turn your **left palm toward your face** — a menu floats above the
+palm; tap a row with the right index fingertip.
+
 The globe is a 24-inch (0.61 m) instrument placed 0.7 m in front of your
 head at session start.
 
