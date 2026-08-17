@@ -59,9 +59,16 @@ export default class SiteInspector {
     this.experience.scene.add(this.label);
   }
 
-  // Lazily cache column directions (unit vectors) and heights.
+  // Lazily cache column directions (unit vectors) and heights; heights go
+  // stale when DataPoints rebuilds (metric switch), tracked via dp.version.
   _dataPoints() {
     const dp = this.experience.world.globe?.dataPoints;
+    if (dp && this._dirs && this._cacheVersion !== dp.version) {
+      for (let i = 0; i < this._heights.length; i++) {
+        this._heights[i] = dp.heightFor(i);
+      }
+      this._cacheVersion = dp.version;
+    }
     if (dp && !this._dirs) {
       const n = dp.sites.length;
       this._dirs = new Float32Array(n * 3);
@@ -74,6 +81,7 @@ export default class SiteInspector {
         this._dirs[i * 3 + 2] = v.z;
         this._heights[i] = dp.heightFor(i);
       }
+      this._cacheVersion = dp.version;
     }
     return dp;
   }
@@ -146,10 +154,20 @@ export default class SiteInspector {
       const site = dp.sites[i];
       const place = site.city ? `${site.city}, ${site.country}` : site.country;
       const count = `${site.n.toLocaleString()} ${site.n === 1 ? "facility" : "facilities"}`;
+      let mix = "";
+      if (site.ops) {
+        const labels = ["hyperscaler", "colo", "telco", "other"];
+        mix = site.ops
+          .map((c, k) => (c > 0 ? `${c} ${labels[k]}` : null))
+          .filter(Boolean)
+          .join(" · ");
+      }
       this.tooltip.innerHTML =
-        `<span class="t-name"></span><br /><span class="t-count"></span>`;
+        `<span class="t-name"></span><br /><span class="t-count"></span>` +
+        (mix ? `<br /><span class="t-mix"></span>` : "");
       this.tooltip.querySelector(".t-name").textContent = place;
       this.tooltip.querySelector(".t-count").textContent = count;
+      if (mix) this.tooltip.querySelector(".t-mix").textContent = mix;
       this._drawLabel(place, count);
     }
     if (dp.mesh.instanceColor) dp.mesh.instanceColor.needsUpdate = true;

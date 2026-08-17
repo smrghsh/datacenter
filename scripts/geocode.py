@@ -8,14 +8,15 @@ Passes, per row (all offline, GeoNames):
   4. Japanese-style suffix strip (-shi/-ku/-cho/-machi) retry
   5. capital fallback for tiny territories (< 15,000 km^2: HK, SG, MO, ...)
 
-Output data/sites.json:
-  {total_records, geocoded, sites: [{lat, lng, n, city, country}]} (n desc)
+Output data/sites.json + static/data/sites.json:
+  {total_records, geocoded, sites: [{lat, lng, n, city, country, ops}]} (n desc)
+  ops = [h, c, t, o] facility counts: hyperscaler / colocation / telco / other
 """
 import csv, json, re, unicodedata
-from collections import defaultdict
+from collections import defaultdict, Counter
 
-SCRATCH = "/private/tmp/claude-501/-Users-vertex-code-datacenter-globe/d8a61834-bebc-4ac2-9988-68943c99bb69/scratchpad"
-ROOT = "/Users/vertex/code/datacenter-globe"
+SCRATCH = "/private/tmp/claude-501/-Users-vertex-code-datacenter-globe/0fff53b0-95e3-40b9-b6ff-d993c3682264/scratchpad/geonames"
+ROOT = "/Users/vertex/code/datacenter"
 
 def norm(s):
     s = unicodedata.normalize("NFKD", s)
@@ -242,12 +243,179 @@ def capital_fallback(cc):
             return _gaz_get(cc, norm(cap))
     return None
 
+# ---------- operator classification ----------
+# canon company name: strip accents, punctuation, corporate suffixes
+_CORP = re.compile(r"\b(inc|ltd|llc|llp|plc|corp|corporation|co|company|gmbh|ag|sa|s a|bv|b v|nv|pty|pte|limited|holdings|holding|group|sas|srl|s r l|kk|k k|oy|ab|as|a s|s p a|spa)\b")
+def canon_company(s):
+    s = unicodedata.normalize("NFKD", s or "")
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = s.lower().strip()
+    s = re.sub(r"[\.\,\'’‘\-–—/()&\"]", " ", s)
+    s = _CORP.sub(" ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+# canon-name -> (display operator, class)  h=hyperscaler c=colocation t=telco o=other
+_H = {
+    "Amazon/AWS": ["amazon aws", "amazon", "aws", "amazon web services", "amazon data services"],
+    "Google": ["google", "google cloud"],
+    "Microsoft": ["microsoft", "microsoft azure", "azure"],
+    "Meta": ["meta", "facebook"],
+    "Apple": ["apple"],
+    "Oracle": ["oracle", "oracle cloud"],
+    "IBM/SoftLayer": ["ibm", "ibm cloud", "softlayer", "softlayer technologies ibm cloud"],
+    "Alibaba": ["alibaba", "alibaba cloud"],
+    "Tencent": ["tencent", "tencent cloud"],
+    "Baidu": ["baidu"],
+    "Huawei": ["huawei", "huawei cloud"],
+    "ByteDance": ["bytedance"],
+}
+_C = {
+    "Equinix": ["equinix"],
+    "Digital Realty": ["digital realty", "digital realty trust", "interxion", "telx", "ascenty", "ascenty data centers", "teraco"],
+    "NTT GDC": ["ntt", "ntt global data centers", "ntt data", "ragingwire", "ntt communications"],
+    "CyrusOne": ["cyrusone", "cyrusone data centers"],
+    "Vantage": ["vantage data centers", "vantage"],
+    "DataBank": ["databank"],
+    "QTS": ["qts", "qts data centers", "quality technology services qts"],
+    "Switch": ["switch"],
+    "Iron Mountain": ["iron mountain", "iron mountain data centers"],
+    "Cologix": ["cologix"],
+    "Flexential": ["flexential"],
+    "STACK": ["stack infrastructure"],
+    "Aligned": ["aligned", "aligned data centers"],
+    "EdgeConneX": ["edgeconnex"],
+    "Global Switch": ["global switch"],
+    "Telehouse": ["telehouse"],
+    "GDS": ["gds"],
+    "VNET/21Vianet": ["vnet", "21vianet"],
+    "AirTrunk": ["airtrunk"],
+    "NEXTDC": ["nextdc"],
+    "CoreSite": ["coresite"],
+    "TierPoint": ["tierpoint"],
+    "Zenlayer": ["zenlayer"],
+    "Csquare": ["csquare"],
+    "365 Data Centers": ["365 data centers"],
+    "Cyxtera": ["cyxtera"],
+    "Centersquare": ["centersquare", "centersquare formerly evoque", "evoque"],
+    "STT GDC": ["sttelemedia global data centres", "st telemedia gdc", "st telemedia global data centres"],
+    "CloudHQ": ["cloudhq"],
+    "Compass": ["compass datacenters"],
+    "Stream": ["stream data centers"],
+    "Prime": ["prime data centers"],
+    "T5": ["t5 data centers"],
+    "EdgeCore": ["edgecore"],
+    "Skybox": ["skybox datacenters"],
+    "Serverfarm": ["serverfarm"],
+    "Internap": ["inap internap", "internap"],
+    "HorizonIQ": ["horizoniq"],
+    "Pulsant": ["pulsant"],
+    "Virtus": ["virtus data centres"],
+    "H5": ["h5 data centers"],
+    "Continent 8": ["continent 8 technologies"],
+    "Edged": ["edged", "edged energy"],
+    "DC BLOX": ["dc blox"],
+    "Sabey": ["sabey data centers", "sabey data center properties"],
+    "LightEdge": ["lightedge"],
+    "Ark": ["ark data centres uk", "ark data centres"],
+    "Center3": ["center3"],
+    "KIO Networks": ["kio networks"],
+    "nLighten": ["nlighten"],
+    "NorthC": ["northc"],
+    "eStruxture": ["estruxture"],
+    "AtlasEdge": ["atlasedge data centers", "atlasedge"],
+    "Digital Edge": ["digital edge dc", "digital edge"],
+    "Princeton Digital": ["princeton digital pdg", "princeton digital"],
+    "Keppel": ["keppel data centres", "keppel data centres germany"],
+    "ColoCrossing": ["colocrossing"],
+    "Evocative": ["evocative", "evocative data centers"],
+    "Urbacon": ["urbacon data centre solutions"],
+    "CDC": ["cdc data centres"],
+    "DigiCo": ["digico infrastructure reit"],
+    "Rowan": ["rowan digital infrastructure"],
+    "Powerhouse": ["powerhouse data centers", "powerhouse"],
+    "Etix Everywhere": ["etix everywhere"],
+    "EdgeUno": ["edgeuno"],
+    "3data": ["3data"],
+    "UltraEdge": ["ultraedge"],
+    "Expedient": ["expedient"],
+    "Alticom": ["alticom"],
+}
+_T = {
+    "China Telecom": ["china telecom"],
+    "China Unicom": ["china unicom", "china united network communications china unicom"],
+    "China Mobile": ["china mobile", "china mobile international"],
+    "Lumen": ["lumen", "centurylink", "level 3", "level3", "level 3 communications"],
+    "AT&T": ["at t", "att"],
+    "Verizon": ["verizon"],
+    "Zayo": ["zayo"],
+    "Orange": ["orange", "orange business"],
+    "Deutsche Telekom": ["deutsche telekom", "t systems", "t systems international"],
+    "Telefonica": ["telefonica", "telefonica o2", "telefonica global solutions", "telxius"],
+    "BT": ["bt", "bt global services", "bt services british telecom", "british telecom"],
+    "Telstra": ["telstra", "telstra international"],
+    "Singtel": ["singtel"],
+    "StarHub": ["starhub"],
+    "KT": ["kt", "kt cloud data centers"],
+    "SK": ["sk", "sk broadband", "sk telecom"],
+    "Vodafone": ["vodafone", "vodafone netherlands", "vodafone espana"],
+    "Comcast": ["comcast", "comcast cable"],
+    "Cogent": ["cogent communications"],
+    "XO Communications": ["xo communications"],
+    "Windstream": ["windstream"],
+    "Tata Communications": ["tata communications"],
+    "MTN": ["mtn"],
+    "Telia": ["telia", "telia carrier"],
+    "euNetworks": ["eunetworks"],
+    "EXA Infrastructure": ["exa infrastructure"],
+    "Interoute": ["interoute"],
+    "KPN": ["kpn international", "kpn"],
+    "Colt": ["colt", "colt technologies"],
+    "GTS Telecom": ["gts telecom"],
+    "Retelit": ["retelit"],
+    "Claro": ["claro"],
+    "GlobalConnect": ["globalconnect"],
+    "FirstLight": ["firstlight"],
+    "Consolidated Communications": ["consolidated communications"],
+    "Vocus": ["vocus communications"],
+    "AAPT": ["aapt"],
+    "Spark": ["spark digital"],
+    "Chunghwa Telecom": ["idc chunghwa telecom", "chunghwa telecom"],
+    "Flo Networks": ["flo networks"],
+    "iTel Networks": ["itel networks"],
+    "Neutrona": ["neutrona"],
+    "IPTP Networks": ["iptp networks"],
+    "US Signal": ["us signal"],
+    "Crown Castle": ["crown castle"],
+    "Cellnex": ["cellnext", "cellnex"],
+    "SAT-3": ["sat 3"],
+    "WACS": ["wacs west africa cable system"],
+    "ACE": ["ace african coast to europe"],
+}
+OPS = {}
+for cls, table in (("h", _H), ("c", _C), ("t", _T)):
+    for disp, keys in table.items():
+        for k in keys:
+            OPS[k] = (disp, cls)
+
+def classify(company):
+    k = canon_company(company)
+    hit = OPS.get(k)
+    return hit if hit else (k or "(blank)", "o")
+
 rows = list(csv.DictReader(open(f"{ROOT}/data/datacenters.csv", encoding="utf-8")))
 matched = 0
 via = defaultdict(int)
 agg = {}
 unmatched = []
+CLS_IDX = {"h": 0, "c": 1, "t": 2, "o": 3}
+cls_total = Counter()          # facilities per class, all rows
+cls_geo = Counter()            # facilities per class, geocoded rows
+op_total = Counter()           # facilities per canonical operator (classified only)
 for r in rows:
+    op_name, op_cls = classify(r["company"])
+    cls_total[op_cls] += 1
+    if op_cls != "o":
+        op_total[(op_name, op_cls)] += 1
     addr = clean_address(r["address"] or "")
     cc = None
     if r["country"].strip():
@@ -271,19 +439,29 @@ for r in rows:
             pt = capital_fallback(cc);                how = "capital" if pt else None
     if pt:
         matched += 1; via[how] += 1
+        cls_geo[op_cls] += 1
         label = pt[2] if len(pt) > 2 and pt[2] else (r["city"] if len(r["city"] or "") > 3 else "")
         key = (round(pt[0], 3), round(pt[1], 3))
-        a = agg.setdefault(key, {"lat": key[0], "lng": key[1], "n": 0, "city": "", "country": r["country"] or ""})
+        a = agg.setdefault(key, {"lat": key[0], "lng": key[1], "n": 0, "city": "", "country": r["country"] or "", "ops": [0, 0, 0, 0]})
         a["n"] += 1
+        a["ops"][CLS_IDX[op_cls]] += 1
         if label and (not a["city"] or len(label) > 3 and a["city"] in ("", None)):
             a["city"] = label
     else:
         unmatched.append(f"{r['city']!r} | {r['country']!r} | {(r['address'] or '')[:70]!r}")
 
 sites = sorted(agg.values(), key=lambda a: -a["n"])
-json.dump({"total_records": len(rows), "geocoded": matched, "sites": sites},
-          open(f"{ROOT}/data/sites.json", "w"), ensure_ascii=False, separators=(",", ":"))
+payload = json.dumps({"total_records": len(rows), "geocoded": matched, "sites": sites},
+                     ensure_ascii=False, separators=(",", ":"))
+for out in (f"{ROOT}/data/sites.json", f"{ROOT}/static/data/sites.json"):
+    open(out, "w").write(payload)
+CLS_NAME = {"h": "hyperscaler", "c": "colocation", "t": "telco", "o": "other"}
 rep = [f"rows={len(rows)} matched={matched} ({matched/len(rows)*100:.1f}%) sites={len(sites)}",
-       f"via={dict(via)}", "", f"UNMATCHED ({len(unmatched)}):"] + unmatched[:80]
+       f"via={dict(via)}", "",
+       "OPERATOR CLASSES (facilities: all rows / geocoded):"]
+rep += [f"  {c} {CLS_NAME[c]:<11} {cls_total[c]:>6} / {cls_geo[c]}" for c in "hcto"]
+rep += ["", "TOP CLASSIFIED OPERATORS (all rows):"]
+rep += [f"  {n:>4}  [{cls}] {name}" for (name, cls), n in op_total.most_common(25)]
+rep += ["", f"UNMATCHED ({len(unmatched)}):"] + unmatched[:80]
 open(f"{ROOT}/data/geocode_report.txt", "w").write("\n".join(rep))
-print("\n".join(rep[:2]))
+print("\n".join(rep[:10]))

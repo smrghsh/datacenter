@@ -4,6 +4,8 @@ import { latLngToVec3 } from "./geo.js";
 import DataPoints from "./DataPoints.js";
 import Graticule from "./Graticule.js";
 import Heatmap from "./Heatmap.js";
+import Cables from "./Cables.js";
+import CloudRegions from "./CloudRegions.js";
 
 // Matte scientific palette. Land/ocean/graticule are recessive context; the
 // data (amber columns) is the only saturated layer.
@@ -38,6 +40,8 @@ export default class Globe {
     this.graticule = new Graticule(this.group);
     this.dataPoints = new DataPoints(this.group);
     this.heatmap = new Heatmap(this.group);
+    this.cables = new Cables(this.group);
+    this.cloudRegions = new CloudRegions(this.group);
 
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("globe");

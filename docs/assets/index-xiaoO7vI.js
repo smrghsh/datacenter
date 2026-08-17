@@ -14695,6 +14695,86 @@ class SphereGeometry extends BufferGeometry {
     return new SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
   }
 }
+class TorusGeometry extends BufferGeometry {
+  /**
+   * Constructs a new torus geometry.
+   *
+   * @param {number} [radius=1] - Radius of the torus, from the center of the torus to the center of the tube.
+   * @param {number} [tube=0.4] - Radius of the tube. Must be smaller than `radius`.
+   * @param {number} [radialSegments=12] - The number of radial segments.
+   * @param {number} [tubularSegments=48] - The number of tubular segments.
+   * @param {number} [arc=Math.PI*2] - Central angle in radians.
+   * @param {number} [thetaStart=0] - Start of the tubular sweep in radians.
+   * @param {number} [thetaLength=Math.PI*2] - Length of the tubular sweep in radians.
+   */
+  constructor(radius = 1, tube = 0.4, radialSegments = 12, tubularSegments = 48, arc = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI * 2) {
+    super();
+    this.type = "TorusGeometry";
+    this.parameters = {
+      radius,
+      tube,
+      radialSegments,
+      tubularSegments,
+      arc,
+      thetaStart,
+      thetaLength
+    };
+    radialSegments = Math.floor(radialSegments);
+    tubularSegments = Math.floor(tubularSegments);
+    const indices = [];
+    const vertices = [];
+    const normals = [];
+    const uvs = [];
+    const center = new Vector3();
+    const vertex2 = new Vector3();
+    const normal = new Vector3();
+    for (let j = 0; j <= radialSegments; j++) {
+      const v = thetaStart + j / radialSegments * thetaLength;
+      for (let i = 0; i <= tubularSegments; i++) {
+        const u = i / tubularSegments * arc;
+        vertex2.x = (radius + tube * Math.cos(v)) * Math.cos(u);
+        vertex2.y = (radius + tube * Math.cos(v)) * Math.sin(u);
+        vertex2.z = tube * Math.sin(v);
+        vertices.push(vertex2.x, vertex2.y, vertex2.z);
+        center.x = radius * Math.cos(u);
+        center.y = radius * Math.sin(u);
+        normal.subVectors(vertex2, center).normalize();
+        normals.push(normal.x, normal.y, normal.z);
+        uvs.push(i / tubularSegments);
+        uvs.push(j / radialSegments);
+      }
+    }
+    for (let j = 1; j <= radialSegments; j++) {
+      for (let i = 1; i <= tubularSegments; i++) {
+        const a = (tubularSegments + 1) * j + i - 1;
+        const b = (tubularSegments + 1) * (j - 1) + i - 1;
+        const c = (tubularSegments + 1) * (j - 1) + i;
+        const d = (tubularSegments + 1) * j + i;
+        indices.push(a, b, d);
+        indices.push(b, c, d);
+      }
+    }
+    this.setIndex(indices);
+    this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+    this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+  }
+  copy(source) {
+    super.copy(source);
+    this.parameters = Object.assign({}, source.parameters);
+    return this;
+  }
+  /**
+   * Factory method for creating an instance of this class from the given
+   * JSON object.
+   *
+   * @param {Object} data - A JSON object representing the serialized geometry.
+   * @return {TorusGeometry} A new instance.
+   */
+  static fromJSON(data) {
+    return new TorusGeometry(data.radius, data.tube, data.radialSegments, data.tubularSegments, data.arc);
+  }
+}
 function cloneUniforms(src) {
   const dst = {};
   for (const u in src) {
@@ -33260,14 +33340,44 @@ function latLngToVec3(lat, lng, r, target = new Vector3()) {
   );
   return target;
 }
+const OPERATOR_CLASSES = [
+  { key: "h", label: "hyperscaler", color: "#e8a34c" },
+  { key: "c", label: "colocation", color: "#7fc9a6" },
+  { key: "t", label: "telco", color: "#7fa6d9" },
+  { key: "o", label: "other", color: "#66738a" }
+];
+const CARBON_RAMP = {
+  clean: "#6fbfa8",
+  // low gCO2/kWh
+  mid: "#8a8578",
+  // world average
+  dirty: "#d96f4a"
+  // high gCO2/kWh
+};
+const CLOUD_PROVIDERS = [
+  { key: "aws", label: "AWS", color: "#e8883a" },
+  { key: "azure", label: "Azure", color: "#6f9fd8" },
+  { key: "gcp", label: "GCP", color: "#8ac97f" }
+];
+const CABLE_COLOR = "#54749c";
 const RAMP_LOW = new Color("#5e401f");
 const RAMP_HIGH = new Color("#ffcf8a");
+const OPERATOR_COLORS = OPERATOR_CLASSES.map((c) => new Color(c.color));
+const CARBON_CLEAN = new Color(CARBON_RAMP.clean);
+const CARBON_MID = new Color(CARBON_RAMP.mid);
+const CARBON_DIRTY = new Color(CARBON_RAMP.dirty);
 class DataPoints {
   constructor(parent) {
     this.experience = new Experience();
     this.debug = this.experience.debug;
     const sites = this.experience.resources.items.sites.sites;
     this.sites = sites;
+    const stats = this.experience.resources.items.countryStats;
+    this.countries = stats.countries;
+    this.worldGco2 = stats.meta.world_gco2_kwh;
+    this.metric = "absolute";
+    this.colorMode = "density";
+    this.version = 0;
     this.params = {
       baseHeight: 32e-4,
       // metres, n = 1
@@ -33293,37 +33403,85 @@ class DataPoints {
       f.close();
     }
   }
+  setMetric(metric) {
+    if (metric === this.metric) return;
+    this.metric = metric;
+    this.rebuild();
+  }
+  setColorMode(mode) {
+    if (mode === this.colorMode) return;
+    this.colorMode = mode;
+    this.rebuild();
+  }
+  // √-weight of site i under the current metric, in sqrt(n) units after the
+  // normalizer. Per-capita sites in a country with no population get 0.
+  _weight(i) {
+    var _a;
+    const site = this.sites[i];
+    if (this.metric === "percapita") {
+      const pop = (_a = this.countries[site.country]) == null ? void 0 : _a.pop_m;
+      return pop ? Math.sqrt(site.n / pop) : 0;
+    }
+    return Math.sqrt(site.n);
+  }
+  // Per-metric normalizer: rescales per-capita √-weights so the tallest
+  // per-capita column matches the tallest absolute one. Computed once, cached.
+  _normalizer() {
+    if (this.metric !== "percapita") return 1;
+    if (this._percapScale === void 0) {
+      let max = 0;
+      for (let i = 0; i < this.sites.length; i++) max = Math.max(max, this._weight(i));
+      this._percapScale = max > 0 ? Math.sqrt(this.maxN) / max : 0;
+    }
+    return this._percapScale;
+  }
   rebuild() {
+    this.version = (this.version || 0) + 1;
     const m = new Matrix4();
     const q = new Quaternion();
     const up = new Vector3(0, 1, 0);
     const pos = new Vector3();
     const scale = new Vector3();
     const color = new Color();
-    const sqrtMax = Math.sqrt(this.maxN);
     this.sites.forEach((site, i) => {
       latLngToVec3(site.lat, site.lng, GLOBE_RADIUS, pos);
       const normal = pos.clone().normalize();
       q.setFromUnitVectors(up, normal);
-      const t = Math.sqrt(site.n) / sqrtMax;
-      const h = this.params.baseHeight + this.params.heightScale * Math.sqrt(site.n);
-      scale.set(this.params.width, h, this.params.width);
+      const h = this.heightFor(i);
+      if (h > 0) scale.set(this.params.width, h, this.params.width);
+      else scale.set(0, 0, 0);
       m.compose(pos, q, scale);
       this.mesh.setMatrixAt(i, m);
-      color.copy(RAMP_LOW).lerp(RAMP_HIGH, Math.pow(t, 0.6));
-      this.mesh.setColorAt(i, color);
+      this.mesh.setColorAt(i, this.colorFor(i, color));
     });
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
-  // Ramp colour of site i (the inspector restores highlights through this).
+  // Colour of site i under the CURRENT mode (the inspector restores
+  // highlights through this).
   colorFor(i, out = new Color()) {
-    const t = Math.sqrt(this.sites[i].n) / Math.sqrt(this.maxN);
+    var _a;
+    const site = this.sites[i];
+    if (this.colorMode === "operator") {
+      let best = 0;
+      for (let k = 1; k < site.ops.length; k++) {
+        if (site.ops[k] > site.ops[best]) best = k;
+      }
+      return out.copy(OPERATOR_COLORS[best]);
+    }
+    if (this.colorMode === "carbon") {
+      const g = (_a = this.countries[site.country]) == null ? void 0 : _a.gco2_kwh;
+      if (g == null) return out.copy(CARBON_MID);
+      if (g <= this.worldGco2) return out.copy(CARBON_CLEAN).lerp(CARBON_MID, g / this.worldGco2);
+      return out.copy(CARBON_MID).lerp(CARBON_DIRTY, Math.min(g / this.worldGco2 - 1, 1));
+    }
+    const t = Math.sqrt(site.n) / Math.sqrt(this.maxN);
     return out.copy(RAMP_LOW).lerp(RAMP_HIGH, Math.pow(t, 0.6));
   }
-  // Column height of site i in metres.
+  // Column height of site i in metres under the CURRENT metric.
   heightFor(i) {
-    return this.params.baseHeight + this.params.heightScale * Math.sqrt(this.sites[i].n);
+    const w = this._weight(i) * this._normalizer();
+    return w > 0 ? this.params.baseHeight + this.params.heightScale * w : 0;
   }
   update() {
   }
@@ -33396,13 +33554,14 @@ function ramp(t) {
 class Heatmap {
   constructor(parent) {
     this.experience = new Experience();
-    const sites = this.experience.resources.items.sites.sites;
-    const intensity = this.splat(sites);
-    const texture = this.colorize(intensity);
+    this.sites = this.experience.resources.items.sites.sites;
+    this.countries = this.experience.resources.items.countryStats.countries;
+    this.metric = "absolute";
+    this.textures = { absolute: this.bake("absolute") };
     this.mesh = new Mesh(
       new SphereGeometry(GLOBE_RADIUS * 1.003, 96, 96),
       new MeshBasicMaterial({
-        map: texture,
+        map: this.textures.absolute,
         transparent: true,
         depthWrite: false
       })
@@ -33411,10 +33570,27 @@ class Heatmap {
     this.mesh.visible = false;
     parent.add(this.mesh);
   }
-  splat(sites) {
+  setMetric(metric) {
+    if (metric === this.metric) return;
+    this.metric = metric;
+    if (!this.textures[metric]) this.textures[metric] = this.bake(metric);
+    this.mesh.material.map = this.textures[metric];
+  }
+  bake(metric) {
+    return this.colorize(this.splat(this.sites, metric));
+  }
+  splat(sites, metric) {
+    var _a;
     const buf = new Float32Array(W * H);
     for (const s of sites) {
-      const w = Math.sqrt(s.n);
+      let w;
+      if (metric === "percapita") {
+        const pop = (_a = this.countries[s.country]) == null ? void 0 : _a.pop_m;
+        if (!pop) continue;
+        w = Math.sqrt(s.n / pop);
+      } else {
+        w = Math.sqrt(s.n);
+      }
       const cx = (s.lng + 180) / 360 * W;
       const cy = (90 - s.lat) / 180 * H;
       const sy = SIGMA_PX;
@@ -33459,6 +33635,134 @@ class Heatmap {
     return texture;
   }
 }
+const SURFACE_FACTOR$1 = 1.0015;
+const MAX_SEGMENT_RAD = 2 * Math.PI / 180;
+const LANDING_RADIUS = 11e-4;
+function slerpUnit(a, b, t, out) {
+  const dot = MathUtils.clamp(a.dot(b), -1, 1);
+  const theta = Math.acos(dot);
+  if (theta < 1e-6) return out.copy(a);
+  const s = Math.sin(theta);
+  return out.copy(a).multiplyScalar(Math.sin((1 - t) * theta) / s).addScaledVector(b, Math.sin(t * theta) / s);
+}
+class Cables {
+  constructor(parent) {
+    this.experience = new Experience();
+    const data = this.experience.resources.items.cables;
+    this.group = new Group();
+    this.group.visible = false;
+    parent.add(this.group);
+    this.setRoutes(data.cables);
+    this.setLandings(data.landings);
+  }
+  setRoutes(cables) {
+    const positions = [];
+    const a = new Vector3();
+    const b = new Vector3();
+    const p = new Vector3();
+    const q = new Vector3();
+    for (const cable of cables) {
+      for (const path of cable.paths) {
+        for (let i = 0; i < path.length - 1; i++) {
+          latLngToVec3(path[i][0], path[i][1], 1, a).normalize();
+          latLngToVec3(path[i + 1][0], path[i + 1][1], 1, b).normalize();
+          const steps = Math.max(1, Math.ceil(a.angleTo(b) / MAX_SEGMENT_RAD));
+          const surface = GLOBE_RADIUS * SURFACE_FACTOR$1;
+          for (let s = 0; s < steps; s++) {
+            slerpUnit(a, b, s / steps, p).multiplyScalar(surface);
+            slerpUnit(a, b, (s + 1) / steps, q).multiplyScalar(surface);
+            positions.push(p.x, p.y, p.z, q.x, q.y, q.z);
+          }
+        }
+      }
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    this.lines = new LineSegments(
+      geo,
+      new LineBasicMaterial({
+        color: CABLE_COLOR,
+        transparent: true,
+        opacity: 0.5,
+        depthWrite: false
+        // depthTest stays on: the ocean sphere occludes the far side
+      })
+    );
+    this.group.add(this.lines);
+  }
+  setLandings(landings) {
+    const geo = new SphereGeometry(1, 8, 6);
+    this.landings = new InstancedMesh(
+      geo,
+      new MeshBasicMaterial({
+        color: "#93a8c2",
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false
+      }),
+      landings.length
+    );
+    this.landings.instanceMatrix.setUsage(StaticDrawUsage);
+    this.landings.frustumCulled = false;
+    const m = new Matrix4();
+    const pos = new Vector3();
+    const quat = new Quaternion();
+    const scale = new Vector3(LANDING_RADIUS, LANDING_RADIUS, LANDING_RADIUS);
+    landings.forEach((site, i) => {
+      latLngToVec3(site.lat, site.lng, GLOBE_RADIUS * SURFACE_FACTOR$1, pos);
+      m.compose(pos, quat, scale);
+      this.landings.setMatrixAt(i, m);
+    });
+    this.landings.instanceMatrix.needsUpdate = true;
+    this.group.add(this.landings);
+  }
+}
+const SURFACE_FACTOR = 1.004;
+const OUTER_RADIUS = 3e-3;
+const RING_SCALE = OUTER_RADIUS / 1.18;
+class CloudRegions {
+  constructor(parent) {
+    this.experience = new Experience();
+    const regions = this.experience.resources.items.cloudRegions.regions;
+    this.group = new Group();
+    this.group.visible = false;
+    parent.add(this.group);
+    const geo = new TorusGeometry(1, 0.18, 8, 24);
+    const m = new Matrix4();
+    const pos = new Vector3();
+    const normal = new Vector3();
+    const quat = new Quaternion();
+    const zAxis = new Vector3(0, 0, 1);
+    const scale = new Vector3(RING_SCALE, RING_SCALE, RING_SCALE);
+    this.meshes = {};
+    for (const provider of CLOUD_PROVIDERS) {
+      const sites = regions.filter((r) => r.provider === provider.key);
+      if (sites.length === 0) continue;
+      const mesh = new InstancedMesh(
+        geo,
+        new MeshBasicMaterial({
+          color: provider.color,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false
+        }),
+        sites.length
+      );
+      mesh.instanceMatrix.setUsage(StaticDrawUsage);
+      mesh.frustumCulled = false;
+      sites.forEach((site, i) => {
+        latLngToVec3(site.lat, site.lng, GLOBE_RADIUS * SURFACE_FACTOR, pos);
+        normal.copy(pos).normalize();
+        quat.setFromUnitVectors(zAxis, normal);
+        m.compose(pos, quat, scale);
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      this.meshes[provider.key] = mesh;
+      this.group.add(mesh);
+    }
+  }
+}
 const PALETTE = {
   ocean: "#101c30",
   land: "#93a8c2",
@@ -33484,6 +33788,8 @@ class Globe {
     this.graticule = new Graticule(this.group);
     this.dataPoints = new DataPoints(this.group);
     this.heatmap = new Heatmap(this.group);
+    this.cables = new Cables(this.group);
+    this.cloudRegions = new CloudRegions(this.group);
     if (this.debug.active) {
       const f = this.debug.ui.addFolder("globe");
       f.add(this.group.position, "y", 0.6, 1.8, 0.01).name("height");
@@ -37152,28 +37458,50 @@ class GlobeGrab {
 }
 const SHOW_DOT = 0.55;
 const HIDE_DOT = 0.3;
-const CANVAS_W = 512;
-const CANVAS_H = 340;
-const PLANE_W = 0.13;
-const PLANE_H = PLANE_W * CANVAS_H / CANVAS_W;
 const TAP_DEPTH = 0.022;
 const REARM_DEPTH = 0.04;
-const ROWS = [
-  ["columns", 96, 208],
-  ["heatmap", 208, 320]
+const CANVAS_W = 560;
+const HEADER_H = 64;
+const ROW_H = 88;
+const PAD = 18;
+const PLANE_W = 0.13;
+const MENU = [
+  { header: "view" },
+  { key: "view", val: "columns", label: "columns" },
+  { key: "view", val: "heatmap", label: "heatmap" },
+  { header: "metric" },
+  { key: "metric", val: "absolute", label: "absolute" },
+  { key: "metric", val: "percapita", label: "per capita" },
+  { header: "color" },
+  { key: "color", val: "density", label: "density" },
+  { key: "color", val: "operator", label: "operator" },
+  { key: "color", val: "carbon", label: "carbon" },
+  { header: "overlays" },
+  { toggle: "cables", label: "cables" },
+  { toggle: "clouds", label: "cloud regions" }
 ];
 class PalmMenu {
   constructor() {
     this.experience = new Experience();
     this.hands = this.experience.hands;
+    let y = PAD;
+    this.rows = MENU.map((m) => {
+      const h = m.header ? HEADER_H : ROW_H;
+      const row = { ...m, y0: y, y1: y + h };
+      y += h;
+      return row;
+    });
+    this.canvasH = y + PAD;
     this.canvas = document.createElement("canvas");
     this.canvas.width = CANVAS_W;
-    this.canvas.height = CANVAS_H;
+    this.canvas.height = this.canvasH;
     this.ctx = this.canvas.getContext("2d");
     this.texture = new CanvasTexture(this.canvas);
     this.texture.anisotropy = 4;
+    this.planeW = PLANE_W;
+    this.planeH = PLANE_W * this.canvasH / CANVAS_W;
     this.mesh = new Mesh(
-      new PlaneGeometry(PLANE_W, PLANE_H),
+      new PlaneGeometry(this.planeW, this.planeH),
       new MeshBasicMaterial({
         map: this.texture,
         transparent: true,
@@ -37197,45 +37525,66 @@ class PalmMenu {
       b: new Vector3()
     };
     this.draw();
-    this.experience.on("viewChanged", () => this.draw());
+    this.experience.on("stateChanged", () => this.draw());
   }
   draw() {
     const ctx = this.ctx;
+    const s = this.experience.state;
     const mono = 'ui-monospace, "SF Mono", Menlo, monospace';
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    const W2 = CANVAS_W;
+    const H2 = this.canvasH;
+    ctx.clearRect(0, 0, W2, H2);
     ctx.fillStyle = "rgba(8, 13, 22, 0.85)";
     ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(2, 2, CANVAS_W - 4, CANVAS_H - 4, 34);
+    ctx.roundRect(2, 2, W2 - 4, H2 - 4, 34);
     ctx.fill();
     ctx.stroke();
-    ctx.font = `500 34px ${mono}`;
-    ctx.fillStyle = "rgba(230, 235, 242, 0.5)";
-    ctx.fillText("view", 40, 66);
-    for (const [label, y0, y1] of ROWS) {
-      const active = this.experience.view === label;
-      if (active) {
+    const colorDisabled = s.view !== "columns";
+    for (const row of this.rows) {
+      const cy = (row.y0 + row.y1) / 2;
+      if (row.header) {
+        ctx.font = `500 30px ${mono}`;
+        ctx.fillStyle = "rgba(230, 235, 242, 0.45)";
+        ctx.fillText(row.header, 36, cy + 16);
+        continue;
+      }
+      const disabled = row.key === "color" && colorDisabled;
+      const active = row.toggle ? !!s[row.toggle] : s[row.key] === row.val;
+      const alpha = disabled ? 0.28 : 1;
+      if (active && !disabled) {
         ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
         ctx.beginPath();
-        ctx.roundRect(20, y0 + 6, CANVAS_W - 40, y1 - y0 - 12, 22);
+        ctx.roundRect(20, row.y0 + 5, W2 - 40, ROW_H - 10, 20);
         ctx.fill();
       }
-      const cy = (y0 + y1) / 2;
-      ctx.beginPath();
-      ctx.arc(64, cy, 15, 0, Math.PI * 2);
-      ctx.strokeStyle = active ? "#ffcf8a" : "rgba(230, 235, 242, 0.4)";
       ctx.lineWidth = 4;
-      ctx.stroke();
-      if (active) {
+      ctx.strokeStyle = active ? `rgba(255, 207, 138, ${alpha})` : `rgba(230, 235, 242, ${0.4 * alpha})`;
+      if (row.toggle) {
         ctx.beginPath();
-        ctx.arc(64, cy, 7, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffcf8a";
-        ctx.fill();
+        ctx.roundRect(48, cy - 15, 30, 30, 7);
+        ctx.stroke();
+        if (active) {
+          ctx.fillStyle = `rgba(255, 207, 138, ${alpha})`;
+          ctx.beginPath();
+          ctx.roundRect(56, cy - 7, 14, 14, 3);
+          ctx.fill();
+        }
+      } else {
+        ctx.beginPath();
+        ctx.arc(63, cy, 15, 0, Math.PI * 2);
+        ctx.stroke();
+        if (active) {
+          ctx.fillStyle = `rgba(255, 207, 138, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(63, cy, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-      ctx.font = `600 44px ${mono}`;
-      ctx.fillStyle = active ? "#e6ebf2" : "rgba(230, 235, 242, 0.65)";
-      ctx.fillText(label, 108, cy + 15);
+      ctx.font = `600 40px ${mono}`;
+      ctx.fillStyle = active ? `rgba(230, 235, 242, ${alpha})` : `rgba(230, 235, 242, ${0.65 * alpha})`;
+      ctx.fillText(row.label, 108, cy + 14);
     }
     this.texture.needsUpdate = true;
   }
@@ -37276,28 +37625,30 @@ class PalmMenu {
     this.mesh.visible = this.showing;
     if (!this.showing) return;
     const v = this._v;
-    this.mesh.position.copy(v.palm).addScaledVector(v.normal, 0.11);
+    this.mesh.position.copy(v.palm).addScaledVector(v.normal, 0.12);
     this.mesh.lookAt(v.head);
     this.mesh.updateMatrixWorld();
     const tip = (_b = (_a = this.hands.hand("right")) == null ? void 0 : _a.joints) == null ? void 0 : _b["index-finger-tip"];
     if (!tip) return;
     tip.getWorldPosition(v.tip);
     const local = this.mesh.worldToLocal(v.tip);
-    const inPlane = Math.abs(local.x) < PLANE_W / 2 && Math.abs(local.y) < PLANE_H / 2;
+    const inPlane = Math.abs(local.x) < this.planeW / 2 && Math.abs(local.y) < this.planeH / 2;
     const depth = Math.abs(local.z);
     if (!this._armed) {
       if (depth > REARM_DEPTH || !inPlane) this._armed = true;
       return;
     }
     if (inPlane && depth < TAP_DEPTH) {
-      const py = (0.5 - local.y / PLANE_H) * CANVAS_H;
-      for (const [label, y0, y1] of ROWS) {
-        if (py >= y0 && py < y1) {
-          this.experience.setView(label);
-          this._armed = false;
-          break;
-        }
+      const py = (0.5 - local.y / this.planeH) * this.canvasH;
+      const row = this.rows.find((r) => !r.header && py >= r.y0 && py < r.y1);
+      if (!row) return;
+      if (row.key === "color" && this.experience.state.view !== "columns") return;
+      if (row.toggle) {
+        this.experience.setState({ [row.toggle]: !this.experience.state[row.toggle] });
+      } else {
+        this.experience.setState({ [row.key]: row.val });
       }
+      this._armed = false;
     }
   }
 }
@@ -37430,10 +37781,17 @@ class SiteInspector {
     this.label.visible = false;
     this.experience.scene.add(this.label);
   }
-  // Lazily cache column directions (unit vectors) and heights.
+  // Lazily cache column directions (unit vectors) and heights; heights go
+  // stale when DataPoints rebuilds (metric switch), tracked via dp.version.
   _dataPoints() {
     var _a;
     const dp = (_a = this.experience.world.globe) == null ? void 0 : _a.dataPoints;
+    if (dp && this._dirs && this._cacheVersion !== dp.version) {
+      for (let i = 0; i < this._heights.length; i++) {
+        this._heights[i] = dp.heightFor(i);
+      }
+      this._cacheVersion = dp.version;
+    }
     if (dp && !this._dirs) {
       const n = dp.sites.length;
       this._dirs = new Float32Array(n * 3);
@@ -37446,6 +37804,7 @@ class SiteInspector {
         this._dirs[i * 3 + 2] = v.z;
         this._heights[i] = dp.heightFor(i);
       }
+      this._cacheVersion = dp.version;
     }
     return dp;
   }
@@ -37512,9 +37871,15 @@ class SiteInspector {
       const site = dp.sites[i];
       const place = site.city ? `${site.city}, ${site.country}` : site.country;
       const count = `${site.n.toLocaleString()} ${site.n === 1 ? "facility" : "facilities"}`;
-      this.tooltip.innerHTML = `<span class="t-name"></span><br /><span class="t-count"></span>`;
+      let mix = "";
+      if (site.ops) {
+        const labels = ["hyperscaler", "colo", "telco", "other"];
+        mix = site.ops.map((c, k) => c > 0 ? `${c} ${labels[k]}` : null).filter(Boolean).join(" · ");
+      }
+      this.tooltip.innerHTML = `<span class="t-name"></span><br /><span class="t-count"></span>` + (mix ? `<br /><span class="t-mix"></span>` : "");
       this.tooltip.querySelector(".t-name").textContent = place;
       this.tooltip.querySelector(".t-count").textContent = count;
+      if (mix) this.tooltip.querySelector(".t-mix").textContent = mix;
       this._drawLabel(place, count);
     }
     if (dp.mesh.instanceColor) dp.mesh.instanceColor.needsUpdate = true;
@@ -37573,7 +37938,10 @@ class SiteInspector {
 }
 const sources = [
   { name: "sites", type: "json", path: "./data/sites.json" },
-  { name: "land", type: "binary", path: "./data/land.bin" }
+  { name: "land", type: "binary", path: "./data/land.bin" },
+  { name: "cables", type: "json", path: "./data/cables.json" },
+  { name: "cloudRegions", type: "json", path: "./data/cloud_regions.json" },
+  { name: "countryStats", type: "json", path: "./data/country_stats.json" }
 ];
 let instance = null;
 const GLOBE_RADIUS = 0.3;
@@ -37585,7 +37953,18 @@ class Experience extends EventEmitter {
     instance = this;
     window.experience = this;
     this.canvas = canvas;
-    this.view = "columns";
+    this.state = {
+      view: "columns",
+      // columns | heatmap
+      metric: "absolute",
+      // absolute | percapita
+      color: "density",
+      // density | operator | carbon (columns only)
+      cables: false,
+      // submarine cables overlay
+      clouds: false
+      // cloud regions overlay
+    };
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.scene = new Scene();
@@ -37605,6 +37984,7 @@ class Experience extends EventEmitter {
       this.camera.resize();
       this.renderer.resize();
     });
+    this.on("worldReady", () => this.applyState());
     this.time = { delta: 16, elapsed: 0 };
     this._lastFrameTime = performance.now();
     this.renderer.instance.setAnimationLoop(() => this.update());
@@ -37613,16 +37993,36 @@ class Experience extends EventEmitter {
     var _a;
     return ((_a = this.renderer) == null ? void 0 : _a.instance.xr.isPresenting) === true;
   }
-  // "columns" | "heatmap" — one saturated data layer at a time.
-  setView(mode) {
-    if (mode === this.view) return;
-    this.view = mode;
-    const globe = this.world.globe;
-    if (globe) {
-      globe.dataPoints.mesh.visible = mode === "columns";
-      globe.heatmap.mesh.visible = mode === "heatmap";
+  // Central view state. One saturated data layer at a time (columns XOR
+  // heatmap); overlays stack on top. Setters funnel through applyState so
+  // desktop panel and XR palm menu stay in sync via one "stateChanged".
+  setView(v) {
+    this.setState({ view: v });
+  }
+  setState(patch) {
+    let changed = false;
+    for (const [k, val] of Object.entries(patch)) {
+      if (this.state[k] !== val) {
+        this.state[k] = val;
+        changed = true;
+      }
     }
-    this.trigger("viewChanged", [mode]);
+    if (!changed) return;
+    this.applyState();
+    this.trigger("stateChanged", [this.state]);
+  }
+  applyState() {
+    var _a, _b, _c, _d, _e, _f, _g;
+    const globe = (_a = this.world) == null ? void 0 : _a.globe;
+    if (!globe) return;
+    const s = this.state;
+    globe.dataPoints.mesh.visible = s.view === "columns";
+    globe.heatmap.mesh.visible = s.view === "heatmap";
+    (_c = (_b = globe.dataPoints).setColorMode) == null ? void 0 : _c.call(_b, s.color);
+    (_e = (_d = globe.dataPoints).setMetric) == null ? void 0 : _e.call(_d, s.metric);
+    (_g = (_f = globe.heatmap).setMetric) == null ? void 0 : _g.call(_f, s.metric);
+    if (globe.cables) globe.cables.group.visible = s.cables;
+    if (globe.cloudRegions) globe.cloudRegions.group.visible = s.clouds;
   }
   update() {
     const now = performance.now();
@@ -37643,17 +38043,50 @@ class Experience extends EventEmitter {
   }
 }
 const experience = new Experience(document.querySelector("canvas.webgl"));
-const viewToggle = document.getElementById("view-toggle");
-viewToggle.addEventListener("click", (e) => {
-  var _a;
-  const mode = (_a = e.target.dataset) == null ? void 0 : _a.view;
-  if (mode) experience.setView(mode);
-});
-experience.on("viewChanged", (mode) => {
-  for (const b of viewToggle.querySelectorAll("button")) {
-    b.setAttribute("aria-checked", String(b.dataset.view === mode));
+const panel = document.getElementById("panel");
+const legend = document.getElementById("legend");
+panel.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.toggle) {
+    experience.setState({
+      [btn.dataset.toggle]: !experience.state[btn.dataset.toggle]
+    });
+  } else if (btn.dataset.val) {
+    experience.setState({ [btn.closest(".seg").dataset.key]: btn.dataset.val });
   }
 });
+function legendRow(color, label) {
+  return `<div class="li"><span class="dot" style="background:${color}"></span>${label}</div>`;
+}
+function syncPanel(s) {
+  for (const seg of panel.querySelectorAll(".seg[data-key]")) {
+    for (const b of seg.querySelectorAll("button")) {
+      b.setAttribute("aria-checked", String(s[seg.dataset.key] === b.dataset.val));
+    }
+  }
+  for (const b of panel.querySelectorAll("button[data-toggle]")) {
+    b.setAttribute("aria-pressed", String(!!s[b.dataset.toggle]));
+  }
+  panel.querySelector('.seg[data-key="color"]').setAttribute("data-disabled", String(s.view !== "columns"));
+  let html = "";
+  if (s.view === "columns" && s.color === "operator") {
+    html += OPERATOR_CLASSES.map((c) => legendRow(c.color, c.label)).join("");
+  }
+  if (s.view === "columns" && s.color === "carbon") {
+    html += `<div class="li"><span class="ramp" style="background:linear-gradient(90deg,${CARBON_RAMP.clean},${CARBON_RAMP.mid},${CARBON_RAMP.dirty})"></span>grid gCO₂/kWh</div>`;
+  }
+  if (s.clouds) {
+    html += CLOUD_PROVIDERS.map((p) => legendRow(p.color, p.label)).join("");
+  }
+  if (s.cables) {
+    html += legendRow(CABLE_COLOR, "submarine cables");
+  }
+  legend.innerHTML = html;
+  legend.hidden = html === "";
+}
+experience.on("stateChanged", (s) => syncPanel(s));
+syncPanel(experience.state);
 experience.on("worldReady", () => {
   const data = experience.resources.items.sites;
   const countEl = document.getElementById("count");
@@ -37668,4 +38101,4 @@ experience.on("worldReady", () => {
   };
   requestAnimationFrame(tick);
 });
-//# sourceMappingURL=index-FoaAAwgw.js.map
+//# sourceMappingURL=index-xiaoO7vI.js.map

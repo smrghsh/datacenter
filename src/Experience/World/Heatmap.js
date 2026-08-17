@@ -4,7 +4,9 @@ import Experience, { GLOBE_RADIUS } from "../Experience.js";
 // Density heatmap view: gaussian splats per site (weight ∝ √count, like the
 // columns' height) accumulated into an equirect buffer once at build, then
 // mapped through the same single-hue amber ramp the columns use — transparent
-// where empty so land/graticule read through.
+// where empty so land/graticule read through. Metric "percapita" reweights
+// the splats to √(count / country pop); each metric's texture is baked once
+// (lazily for percapita) and cached, normalized to its own max.
 const W = 2048;
 const H = 1024;
 const SIGMA_PX = 9; // ~250 km at the equator
@@ -40,15 +42,16 @@ function ramp(t) {
 export default class Heatmap {
   constructor(parent) {
     this.experience = new Experience();
-    const sites = this.experience.resources.items.sites.sites;
+    this.sites = this.experience.resources.items.sites.sites;
+    this.countries = this.experience.resources.items.countryStats.countries;
 
-    const intensity = this.splat(sites);
-    const texture = this.colorize(intensity);
+    this.metric = "absolute"; // absolute | percapita
+    this.textures = { absolute: this.bake("absolute") };
 
     this.mesh = new THREE.Mesh(
       new THREE.SphereGeometry(GLOBE_RADIUS * 1.003, 96, 96),
       new THREE.MeshBasicMaterial({
-        map: texture,
+        map: this.textures.absolute,
         transparent: true,
         depthWrite: false,
       })
@@ -58,10 +61,28 @@ export default class Heatmap {
     parent.add(this.mesh);
   }
 
-  splat(sites) {
+  setMetric(metric) {
+    if (metric === this.metric) return;
+    this.metric = metric;
+    if (!this.textures[metric]) this.textures[metric] = this.bake(metric);
+    this.mesh.material.map = this.textures[metric];
+  }
+
+  bake(metric) {
+    return this.colorize(this.splat(this.sites, metric));
+  }
+
+  splat(sites, metric) {
     const buf = new Float32Array(W * H);
     for (const s of sites) {
-      const w = Math.sqrt(s.n);
+      let w;
+      if (metric === "percapita") {
+        const pop = this.countries[s.country]?.pop_m;
+        if (!pop) continue; // no population — the site can't contribute
+        w = Math.sqrt(s.n / pop);
+      } else {
+        w = Math.sqrt(s.n);
+      }
       const cx = ((s.lng + 180) / 360) * W;
       const cy = ((90 - s.lat) / 180) * H;
       const sy = SIGMA_PX;

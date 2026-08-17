@@ -1,0 +1,503 @@
+{
+ "meta": {
+  "pop_source": "World Bank SP.POP.TOTL 2024 (api.worldbank.org)",
+  "carbon_source": "Ember Yearly Electricity Data 2024, via Our World in Data grapher 'carbon-intensity-electricity' (CC-BY)",
+  "carbon_year": 2024,
+  "world_gco2_kwh": 471.1,
+  "approximated": [
+   "(empty string)",
+   "Guernsey",
+   "Liechtenstein",
+   "São Tomé and Príncipe",
+   "Taiwan",
+   "Ukraine",
+   "Unknown"
+  ]
+ },
+ "countries": {
+  "United States": {
+   "pop_m": 340.004,
+   "gco2_kwh": 383.8
+  },
+  "United Kingdom": {
+   "pop_m": 69.281,
+   "gco2_kwh": 216.5
+  },
+  "Germany": {
+   "pop_m": 83.517,
+   "gco2_kwh": 336.4
+  },
+  "France": {
+   "pop_m": 68.552,
+   "gco2_kwh": 40.5
+  },
+  "Netherlands": {
+   "pop_m": 17.993,
+   "gco2_kwh": 250.7
+  },
+  "China": {
+   "pop_m": 1408.975,
+   "gco2_kwh": 555.4
+  },
+  "Canada": {
+   "pop_m": 41.262,
+   "gco2_kwh": 185.3
+  },
+  "Australia": {
+   "pop_m": 27.194,
+   "gco2_kwh": 553.8
+  },
+  "Brazil": {
+   "pop_m": 211.999,
+   "gco2_kwh": 106.1
+  },
+  "Italy": {
+   "pop_m": 58.953,
+   "gco2_kwh": 281.4
+  },
+  "": {
+   "pop_m": null,
+   "gco2_kwh": 471.1
+  },
+  "Japan": {
+   "pop_m": 123.975,
+   "gco2_kwh": 483.4
+  },
+  "India": {
+   "pop_m": 1450.936,
+   "gco2_kwh": 705.4
+  },
+  "Spain": {
+   "pop_m": 48.849,
+   "gco2_kwh": 146.2
+  },
+  "Switzerland": {
+   "pop_m": 9.006,
+   "gco2_kwh": 34.6
+  },
+  "Indonesia": {
+   "pop_m": 283.488,
+   "gco2_kwh": 680.2
+  },
+  "Singapore": {
+   "pop_m": 6.037,
+   "gco2_kwh": 498.7
+  },
+  "Malaysia": {
+   "pop_m": 35.558,
+   "gco2_kwh": 600.4
+  },
+  "Sweden": {
+   "pop_m": 10.57,
+   "gco2_kwh": 34.9
+  },
+  "Russia": {
+   "pop_m": 143.67,
+   "gco2_kwh": 446.0
+  },
+  "Hong Kong": {
+   "pop_m": 7.524,
+   "gco2_kwh": 675.5
+  },
+  "Poland": {
+   "pop_m": 36.559,
+   "gco2_kwh": 608.2
+  },
+  "South Africa": {
+   "pop_m": 64.007,
+   "gco2_kwh": 717.4
+  },
+  "Belgium": {
+   "pop_m": 11.859,
+   "gco2_kwh": 127.0
+  },
+  "Austria": {
+   "pop_m": 9.178,
+   "gco2_kwh": 103.5
+  },
+  "New Zealand": {
+   "pop_m": 5.29,
+   "gco2_kwh": 112.0
+  },
+  "Ireland": {
+   "pop_m": 5.396,
+   "gco2_kwh": 270.9
+  },
+  "Mexico": {
+   "pop_m": 130.861,
+   "gco2_kwh": 483.1
+  },
+  "Finland": {
+   "pop_m": 5.62,
+   "gco2_kwh": 66.6
+  },
+  "Denmark": {
+   "pop_m": 5.977,
+   "gco2_kwh": 131.8
+  },
+  "Portugal": {
+   "pop_m": 10.695,
+   "gco2_kwh": 110.6
+  },
+  "Norway": {
+   "pop_m": 5.572,
+   "gco2_kwh": 29.7
+  },
+  "Bulgaria": {
+   "pop_m": 6.441,
+   "gco2_kwh": 278.9
+  },
+  "Romania": {
+   "pop_m": 19.052,
+   "gco2_kwh": 251.3
+  },
+  "South Korea": {
+   "pop_m": 51.751,
+   "gco2_kwh": 415.5
+  },
+  "Israel": {
+   "pop_m": 10.002,
+   "gco2_kwh": 540.5
+  },
+  "Turkey": {
+   "pop_m": 85.519,
+   "gco2_kwh": 469.7
+  },
+  "Thailand": {
+   "pop_m": 71.668,
+   "gco2_kwh": 554.7
+  },
+  "United Arab Emirates": {
+   "pop_m": 10.986,
+   "gco2_kwh": 467.5
+  },
+  "Vietnam": {
+   "pop_m": 100.988,
+   "gco2_kwh": 484.3
+  },
+  "Argentina": {
+   "pop_m": 45.696,
+   "gco2_kwh": 344.8
+  },
+  "Ukraine": {
+   "pop_m": 37.86,
+   "gco2_kwh": 471.1
+  },
+  "Chile": {
+   "pop_m": 19.765,
+   "gco2_kwh": 259.9
+  },
+  "Nigeria": {
+   "pop_m": 232.679,
+   "gco2_kwh": 495.7
+  },
+  "Colombia": {
+   "pop_m": 52.886,
+   "gco2_kwh": 298.3
+  },
+  "Czech Republic": {
+   "pop_m": 10.905,
+   "gco2_kwh": 414.2
+  },
+  "Cyprus": {
+   "pop_m": 1.358,
+   "gco2_kwh": 511.2
+  },
+  "Ghana": {
+   "pop_m": 34.427,
+   "gco2_kwh": 468.9
+  },
+  "Kenya": {
+   "pop_m": 56.433,
+   "gco2_kwh": 85.2
+  },
+  "Taiwan": {
+   "pop_m": 23.4,
+   "gco2_kwh": 635.2
+  },
+  "Luxembourg": {
+   "pop_m": 0.677,
+   "gco2_kwh": 132.4
+  },
+  "España": {
+   "pop_m": 48.849,
+   "gco2_kwh": 146.2
+  },
+  "México": {
+   "pop_m": 130.861,
+   "gco2_kwh": 483.1
+  },
+  "Pakistan": {
+   "pop_m": 251.269,
+   "gco2_kwh": 373.7
+  },
+  "Estonia": {
+   "pop_m": 1.372,
+   "gco2_kwh": 343.4
+  },
+  "Latvia": {
+   "pop_m": 1.866,
+   "gco2_kwh": 134.3
+  },
+  "Hungary": {
+   "pop_m": 9.562,
+   "gco2_kwh": 184.5
+  },
+  "Slovakia": {
+   "pop_m": 5.422,
+   "gco2_kwh": 96.5
+  },
+  "Uganda": {
+   "pop_m": 50.015,
+   "gco2_kwh": 58.5
+  },
+  "Saudi Arabia": {
+   "pop_m": 35.3,
+   "gco2_kwh": 692.0
+  },
+  "Lithuania": {
+   "pop_m": 2.888,
+   "gco2_kwh": 116.4
+  },
+  "Tanzania": {
+   "pop_m": 68.56,
+   "gco2_kwh": 345.0
+  },
+  "Mauritius": {
+   "pop_m": 1.246,
+   "gco2_kwh": 642.2
+  },
+  "Canadá": {
+   "pop_m": 41.262,
+   "gco2_kwh": 185.3
+  },
+  "Peru": {
+   "pop_m": 34.218,
+   "gco2_kwh": 258.7
+  },
+  "Côte d'Ivoire": {
+   "pop_m": 31.934,
+   "gco2_kwh": 405.0
+  },
+  "Egypt": {
+   "pop_m": 116.538,
+   "gco2_kwh": 574.5
+  },
+  "Malta": {
+   "pop_m": 0.569,
+   "gco2_kwh": 488.6
+  },
+  "Philippines": {
+   "pop_m": 115.844,
+   "gco2_kwh": 621.7
+  },
+  "Mozambique": {
+   "pop_m": 34.632,
+   "gco2_kwh": 129.4
+  },
+  "Qatar": {
+   "pop_m": 2.858,
+   "gco2_kwh": 581.7
+  },
+  "Slovenia": {
+   "pop_m": 2.127,
+   "gco2_kwh": 230.4
+  },
+  "Costa Rica": {
+   "pop_m": 5.13,
+   "gco2_kwh": 25.5
+  },
+  "Angola": {
+   "pop_m": 37.886,
+   "gco2_kwh": 185.4
+  },
+  "Panama": {
+   "pop_m": 4.516,
+   "gco2_kwh": 221.2
+  },
+  "Zambia": {
+   "pop_m": 21.315,
+   "gco2_kwh": 119.7
+  },
+  "Tunisia": {
+   "pop_m": 12.277,
+   "gco2_kwh": 558.3
+  },
+  "Croatia": {
+   "pop_m": 3.866,
+   "gco2_kwh": 170.7
+  },
+  "Jordan": {
+   "pop_m": 11.553,
+   "gco2_kwh": 529.8
+  },
+  "Namibia": {
+   "pop_m": 3.03,
+   "gco2_kwh": 48.8
+  },
+  "Kuwait": {
+   "pop_m": 4.897,
+   "gco2_kwh": 635.2
+  },
+  "Bahrain": {
+   "pop_m": 1.589,
+   "gco2_kwh": 902.2
+  },
+  "Uruguay": {
+   "pop_m": 3.387,
+   "gco2_kwh": 69.6
+  },
+  "Iran": {
+   "pop_m": 91.568,
+   "gco2_kwh": 648.7
+  },
+  "Greece": {
+   "pop_m": 10.405,
+   "gco2_kwh": 321.6
+  },
+  "Morocco": {
+   "pop_m": 38.081,
+   "gco2_kwh": 594.8
+  },
+  "Republic of Korea": {
+   "pop_m": 51.751,
+   "gco2_kwh": 415.5
+  },
+  "Armenia": {
+   "pop_m": 3.034,
+   "gco2_kwh": 240.3
+  },
+  "Serbia": {
+   "pop_m": 6.586,
+   "gco2_kwh": 666.4
+  },
+  "Ecuador": {
+   "pop_m": 18.135,
+   "gco2_kwh": 203.6
+  },
+  "Cambodia": {
+   "pop_m": 17.639,
+   "gco2_kwh": 538.8
+  },
+  "Algeria": {
+   "pop_m": 46.814,
+   "gco2_kwh": 632.9
+  },
+  "Lebanon": {
+   "pop_m": 5.806,
+   "gco2_kwh": 389.5
+  },
+  "Belarus": {
+   "pop_m": 9.133,
+   "gco2_kwh": 329.6
+  },
+  "Montenegro": {
+   "pop_m": 0.624,
+   "gco2_kwh": 422.1
+  },
+  "Venezuela": {
+   "pop_m": 28.406,
+   "gco2_kwh": 85.9
+  },
+  "Senegal": {
+   "pop_m": 18.502,
+   "gco2_kwh": 540.0
+  },
+  "Cameroon": {
+   "pop_m": 29.124,
+   "gco2_kwh": 225.9
+  },
+  "Oman": {
+   "pop_m": 5.282,
+   "gco2_kwh": 542.8
+  },
+  "Kazakhstan": {
+   "pop_m": 20.593,
+   "gco2_kwh": 802.0
+  },
+  "Iceland": {
+   "pop_m": 0.387,
+   "gco2_kwh": 27.8
+  },
+  "België": {
+   "pop_m": 11.859,
+   "gco2_kwh": 127.0
+  },
+  "Unknown": {
+   "pop_m": null,
+   "gco2_kwh": 471.1
+  },
+  "Türkiye": {
+   "pop_m": 85.519,
+   "gco2_kwh": 469.7
+  },
+  "Afghanistan": {
+   "pop_m": 42.647,
+   "gco2_kwh": 131.3
+  },
+  "Azerbaijan": {
+   "pop_m": 10.203,
+   "gco2_kwh": 634.3
+  },
+  "Guatemala": {
+   "pop_m": 18.406,
+   "gco2_kwh": 301.5
+  },
+  "Chad": {
+   "pop_m": 20.299,
+   "gco2_kwh": 621.6
+  },
+  "Burkina Faso": {
+   "pop_m": 23.549,
+   "gco2_kwh": 562.1
+  },
+  "Zimbabwe": {
+   "pop_m": 16.634,
+   "gco2_kwh": 384.0
+  },
+  "North Macedonia": {
+   "pop_m": 1.824,
+   "gco2_kwh": 510.3
+  },
+  "Nepal": {
+   "pop_m": 29.651,
+   "gco2_kwh": 24.3
+  },
+  "Georgia": {
+   "pop_m": 3.813,
+   "gco2_kwh": 145.0
+  },
+  "Libya": {
+   "pop_m": 7.381,
+   "gco2_kwh": 826.8
+  },
+  "Guernsey": {
+   "pop_m": 0.064,
+   "gco2_kwh": 216.5
+  },
+  "The Gambia": {
+   "pop_m": 2.76,
+   "gco2_kwh": 666.7
+  },
+  "São Tomé and Príncipe": {
+   "pop_m": 0.236,
+   "gco2_kwh": 555.6
+  },
+  "Svizzera": {
+   "pop_m": 9.006,
+   "gco2_kwh": 34.6
+  },
+  "Liechtenstein": {
+   "pop_m": 0.04,
+   "gco2_kwh": 34.6
+  },
+  "Norge": {
+   "pop_m": 5.572,
+   "gco2_kwh": 29.7
+  },
+  "România": {
+   "pop_m": 19.052,
+   "gco2_kwh": 251.3
+  }
+ }
+}

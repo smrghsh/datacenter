@@ -4,15 +4,43 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>data center — the whole earth hums</title>
-    <script type="module" crossorigin src="./assets/index-FoaAAwgw.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BhwwWicr.css">
+    <script type="module" crossorigin src="./assets/index-xiaoO7vI.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BLFMDv1g.css">
   </head>
   <body>
     <canvas class="webgl"></canvas>
 
-    <div id="view-toggle" role="radiogroup" aria-label="data view">
-      <button data-view="columns" aria-checked="true">columns</button>
-      <button data-view="heatmap" aria-checked="false">heatmap</button>
+    <div id="panel">
+      <div class="row" role="radiogroup" aria-label="view">
+        <span class="k">view</span>
+        <div class="seg" data-key="view">
+          <button data-val="columns">columns</button>
+          <button data-val="heatmap">heatmap</button>
+        </div>
+      </div>
+      <div class="row" role="radiogroup" aria-label="metric">
+        <span class="k">metric</span>
+        <div class="seg" data-key="metric">
+          <button data-val="absolute">absolute</button>
+          <button data-val="percapita">per capita</button>
+        </div>
+      </div>
+      <div class="row" role="radiogroup" aria-label="color">
+        <span class="k">color</span>
+        <div class="seg" data-key="color">
+          <button data-val="density">density</button>
+          <button data-val="operator">operator</button>
+          <button data-val="carbon">carbon</button>
+        </div>
+      </div>
+      <div class="row" aria-label="overlays">
+        <span class="k">overlay</span>
+        <div class="seg">
+          <button class="chk" data-toggle="cables">cables</button>
+          <button class="chk" data-toggle="clouds">cloud regions</button>
+        </div>
+      </div>
+      <div id="legend" hidden></div>
     </div>
 
     <div id="hud">
@@ -29,7 +57,10 @@
           >Ringmast4r / Global-Data-Center-Map</a
         >
         ·
-        <span id="coverage"></span> facilities geocoded (GeoNames)
+        <span id="coverage"></span> facilities geocoded (GeoNames) · cables ©
+        <a href="https://www.submarinecablemap.com" target="_blank" rel="noopener"
+          >TeleGeography</a
+        >
       </div>
     </div>
 

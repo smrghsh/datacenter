@@ -1,6 +1,39 @@
 rows=18110 matched=13376 (73.9%) sites=3895
 via={'city': 7406, 'city+addr': 7, 'postal': 3225, 'addr': 2596, 'capital': 142}
 
+OPERATOR CLASSES (facilities: all rows / geocoded):
+  h hyperscaler   1418 / 1013
+  c colocation    5095 / 3588
+  t telco         2324 / 1678
+  o other         9273 / 7097
+
+TOP CLASSIFIED OPERATORS (all rows):
+   645  [h] Amazon/AWS
+   541  [c] Digital Realty
+   523  [t] Lumen
+   482  [c] Equinix
+   316  [t] China Telecom
+   309  [c] Zenlayer
+   278  [h] Microsoft
+   217  [c] DataBank
+   210  [c] CyrusOne
+   209  [c] NTT GDC
+   205  [h] Google
+   183  [c] STACK
+   174  [c] QTS
+   160  [c] Vantage
+   150  [t] Cogent
+   150  [c] Csquare
+   148  [c] EdgeConneX
+   123  [c] TierPoint
+   121  [h] Meta
+   102  [c] Iron Mountain
+   100  [c] Cologix
+    95  [c] 365 Data Centers
+    92  [h] IBM/SoftLayer
+    86  [c] Aligned
+    82  [c] Flexential
+
 UNMATCHED (4734):
 '' | '' | ''
 '6th' | 'Egypt' | '26 July St 12568 6th of October Egypt'

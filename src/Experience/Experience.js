@@ -30,7 +30,13 @@ export default class Experience extends EventEmitter {
     window.experience = this;
 
     this.canvas = canvas;
-    this.view = "columns";
+    this.state = {
+      view: "columns", // columns | heatmap
+      metric: "absolute", // absolute | percapita
+      color: "density", // density | operator | carbon (columns only)
+      cables: false, // submarine cables overlay
+      clouds: false, // cloud regions overlay
+    };
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.scene = new THREE.Scene();
@@ -55,6 +61,7 @@ export default class Experience extends EventEmitter {
       this.camera.resize();
       this.renderer.resize();
     });
+    this.on("worldReady", () => this.applyState());
 
     // setAnimationLoop (not rAF) so the loop survives entering XR.
     this.time = { delta: 16, elapsed: 0 };
@@ -66,16 +73,37 @@ export default class Experience extends EventEmitter {
     return this.renderer?.instance.xr.isPresenting === true;
   }
 
-  // "columns" | "heatmap" — one saturated data layer at a time.
-  setView(mode) {
-    if (mode === this.view) return;
-    this.view = mode;
-    const globe = this.world.globe;
-    if (globe) {
-      globe.dataPoints.mesh.visible = mode === "columns";
-      globe.heatmap.mesh.visible = mode === "heatmap";
+  // Central view state. One saturated data layer at a time (columns XOR
+  // heatmap); overlays stack on top. Setters funnel through applyState so
+  // desktop panel and XR palm menu stay in sync via one "stateChanged".
+  setView(v) {
+    this.setState({ view: v });
+  }
+
+  setState(patch) {
+    let changed = false;
+    for (const [k, val] of Object.entries(patch)) {
+      if (this.state[k] !== val) {
+        this.state[k] = val;
+        changed = true;
+      }
     }
-    this.trigger("viewChanged", [mode]);
+    if (!changed) return;
+    this.applyState();
+    this.trigger("stateChanged", [this.state]);
+  }
+
+  applyState() {
+    const globe = this.world?.globe;
+    if (!globe) return;
+    const s = this.state;
+    globe.dataPoints.mesh.visible = s.view === "columns";
+    globe.heatmap.mesh.visible = s.view === "heatmap";
+    globe.dataPoints.setColorMode?.(s.color);
+    globe.dataPoints.setMetric?.(s.metric);
+    globe.heatmap.setMetric?.(s.metric);
+    if (globe.cables) globe.cables.group.visible = s.cables;
+    if (globe.cloudRegions) globe.cloudRegions.group.visible = s.clouds;
   }
 
   update() {

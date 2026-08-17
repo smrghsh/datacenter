@@ -38,13 +38,23 @@ certificate warning once). Append `#debug` for the lil-gui panel.
 - **Desktop** — left-drag: arcball (grabbed point stays under cursor);
   right-drag: orbit; wheel: dolly. Hover a column for the same site info.
 
-## views
+## views & filters
 
-Two data layers, one visible at a time: **columns** (height ∝ √count) and
-**heatmap** (gaussian splats through the same amber ramp, √count-weighted,
-baked once into a 2048×1024 equirect texture). Toggle top-left on desktop;
-in XR, turn your **left palm toward your face** — a menu floats above the
-palm; tap a row with the right index fingertip.
+The top-left panel (desktop) and the XR palm menu (turn your **left palm
+toward your face**, tap rows with the right index fingertip) drive one
+shared state:
+
+- **view** — *columns* (height ∝ √count) or *heatmap* (gaussian splats
+  through the same amber ramp, baked into a 2048×1024 equirect texture)
+- **metric** — *absolute* or *per capita* (facilities per million people,
+  World Bank 2024)
+- **color** (columns only) — *density* (amber ramp), *operator*
+  (hyperscaler / colocation / telco / other, classified from the ATLAS
+  company field), or *carbon* (site country's grid intensity, Ember 2024,
+  clean→dirty diverging ramp centered on the world average)
+- **overlays** — *submarine cables* (503 systems + 1,329 landing points,
+  © TeleGeography CC BY-NC-SA via submarinecablemap.com) and *cloud
+  regions* (152 GA regions: AWS / Azure / GCP rings)
 
 The globe is a 24-inch (0.61 m) instrument placed 0.7 m in front of your
 head at session start.
